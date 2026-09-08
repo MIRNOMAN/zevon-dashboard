@@ -2,15 +2,19 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 
 // ---------------------------------------------------------------------------
-// Types
+// Types matching zevon-server
 // ---------------------------------------------------------------------------
+
+export type UserRole = "ADMIN" | "MANAGER" | "CUSTOMER";
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: "admin" | "user" | "moderator";
-  avatar?: string;
+  role: UserRole;
+  phone?: string | null;
+  avatarUrl?: string | null;
+  createdAt?: string;
 }
 
 interface AuthState {
@@ -18,18 +22,49 @@ interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  isInitialized: boolean;
 }
 
 // ---------------------------------------------------------------------------
-// Initial state
+// Helper: Load initial state safely from localStorage
 // ---------------------------------------------------------------------------
 
-const initialState: AuthState = {
-  user: null,
-  accessToken: null,
-  refreshToken: null,
-  isAuthenticated: false,
+const loadInitialState = (): AuthState => {
+  if (typeof window === "undefined") {
+    return {
+      user: null,
+      accessToken: null,
+      refreshToken: null,
+      isAuthenticated: false,
+      isInitialized: false,
+    };
+  }
+
+  try {
+    const accessToken = localStorage.getItem("zevon_access_token");
+    const refreshToken = localStorage.getItem("zevon_refresh_token");
+    const userJson = localStorage.getItem("zevon_user");
+    const user = userJson ? (JSON.parse(userJson) as User) : null;
+
+    return {
+      user,
+      accessToken,
+      refreshToken,
+      isAuthenticated: Boolean(accessToken && user),
+      isInitialized: true,
+    };
+  } catch {
+    return {
+      user: null,
+      accessToken: null,
+      refreshToken: null,
+      isAuthenticated: false,
+      isInitialized: true,
+    };
+  }
 };
+
+const initialState: AuthState = loadInitialState();
 
 // ---------------------------------------------------------------------------
 // Slice
@@ -41,7 +76,6 @@ const authSlice = createSlice({
   reducers: {
     /**
      * Set user + tokens after login/register.
-     * Call this from your login mutation's `onQueryStarted` or in a component.
      */
     setCredentials: (
       state,
@@ -56,24 +90,62 @@ const authSlice = createSlice({
       if (user) {
         state.user = user;
       }
-
       state.accessToken = accessToken;
       state.refreshToken = refreshToken;
       state.isAuthenticated = true;
+      state.isInitialized = true;
+
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("zevon_access_token", accessToken);
+          localStorage.setItem("zevon_refresh_token", refreshToken);
+          if (user) {
+            localStorage.setItem("zevon_user", JSON.stringify(user));
+          }
+        } catch {
+          // Ignore local storage error
+        }
+      }
     },
 
     /**
-     * Update only the user profile (e.g. after editing profile).
+     * Update only the user profile (e.g. after editing profile or getMe).
      */
     setUser: (state, action: PayloadAction<User>) => {
       state.user = action.payload;
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("zevon_user", JSON.stringify(action.payload));
+        } catch {
+          // Ignore
+        }
+      }
     },
 
     /**
      * Update access token only (e.g. after silent refresh).
      */
-    updateAccessToken: (state, action: PayloadAction<string>) => {
-      state.accessToken = action.payload;
+    updateAccessToken: (
+      state,
+      action: PayloadAction<{ accessToken: string; refreshToken?: string }>,
+    ) => {
+      state.accessToken = action.payload.accessToken;
+      if (action.payload.refreshToken) {
+        state.refreshToken = action.payload.refreshToken;
+      }
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("zevon_access_token", action.payload.accessToken);
+          if (action.payload.refreshToken) {
+            localStorage.setItem(
+              "zevon_refresh_token",
+              action.payload.refreshToken,
+            );
+          }
+        } catch {
+          // Ignore
+        }
+      }
     },
 
     /**
@@ -84,6 +156,17 @@ const authSlice = createSlice({
       state.accessToken = null;
       state.refreshToken = null;
       state.isAuthenticated = false;
+      state.isInitialized = true;
+
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.removeItem("zevon_access_token");
+          localStorage.removeItem("zevon_refresh_token");
+          localStorage.removeItem("zevon_user");
+        } catch {
+          // Ignore
+        }
+      }
     },
   },
 });
@@ -102,22 +185,15 @@ export const { setCredentials, setUser, updateAccessToken, logout } =
 export const selectCurrentUser = (state: RootState) => state.auth.user;
 export const selectAccessToken = (state: RootState) => state.auth.accessToken;
 export const selectRefreshToken = (state: RootState) => state.auth.refreshToken;
-export const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
+export const selectIsAuthenticated = (state: RootState) =>
+  state.auth.isAuthenticated;
 export const selectUserRole = (state: RootState) => state.auth.user?.role ?? null;
+export const selectIsAuthInitialized = (state: RootState) =>
+  state.auth.isInitialized;
 
-/**
- * Check if the current user has one of the required roles.
- *
- * Usage:
- * ```ts
- * const canAccess = useAppSelector((state) =>
- *   selectHasRole(state, ["admin", "moderator"])
- * );
- * ```
- */
 export const selectHasRole = (
   state: RootState,
-  roles: Array<User["role"]>,
+  roles: Array<UserRole>,
 ): boolean => {
   const userRole = state.auth.user?.role;
   return userRole ? roles.includes(userRole) : false;
