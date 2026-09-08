@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Provider } from "react-redux";
 import { makeStore, type AppStore } from "./store";
-import { setCredentials, logout, type User } from "./features/authSlice";
+import { initializeAuth, type User } from "./features/authSlice";
 
 /**
  * Client-side Redux provider.
@@ -20,19 +20,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const userJson = localStorage.getItem("zevon_user");
       const user = userJson ? (JSON.parse(userJson) as User) : null;
 
-      if (accessToken && refreshToken && user) {
-        store.dispatch(
-          setCredentials({
-            user,
-            accessToken,
-            refreshToken,
-          }),
-        );
-      } else if (!accessToken) {
-        store.dispatch(logout());
-      }
+      store.dispatch(
+        initializeAuth({
+          user,
+          accessToken,
+          refreshToken,
+        }),
+      );
     } catch {
-      // Storage parsing error
+      store.dispatch(
+        initializeAuth({
+          user: null,
+          accessToken: null,
+          refreshToken: null,
+        }),
+      );
     }
   }, [store]);
 

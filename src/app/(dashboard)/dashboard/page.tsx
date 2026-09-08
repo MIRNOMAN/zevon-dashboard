@@ -8,35 +8,67 @@ import {
   TrendingUp,
   Users,
   AlertTriangle,
-  ArrowUpRight,
-  Package,
   Plus,
   ArrowRight,
-  CheckCircle2,
+  Loader2,
   Clock,
+  CheckCircle2,
+  Sparkles,
 } from "lucide-react";
 import { useAppSelector } from "@/redux/hooks";
 import { selectCurrentUser } from "@/redux/features/authSlice";
+import {
+  useGetDashboardMetricsQuery,
+  useGetInventoryAlertsQuery,
+  useGetAdminOrdersQuery,
+} from "@/redux/api/dashboardApi";
+import { useFormatPrice } from "@/lib/useFormatPrice";
 
 export default function DashboardOverviewPage() {
   const currentUser = useAppSelector(selectCurrentUser);
+  const { format: formatCurrency } = useFormatPrice();
+
+  const { data: metricsRes, isLoading: isMetricsLoading } =
+    useGetDashboardMetricsQuery();
+  const { data: alertsRes, isLoading: isAlertsLoading } =
+    useGetInventoryAlertsQuery();
+  const { data: ordersRes, isLoading: isOrdersLoading } =
+    useGetAdminOrdersQuery({ limit: 5 });
+
+  const metrics = metricsRes?.data;
+  const stockAlerts = alertsRes?.data || [];
+
+  // Extract orders
+  const rawOrders = ordersRes?.data;
+  const recentOrders = Array.isArray(rawOrders)
+    ? rawOrders
+    : rawOrders && "orders" in rawOrders
+      ? rawOrders.orders
+      : [];
+
+  const totalRevenue = metrics?.totalRevenue ?? 0;
+  const totalOrders = metrics?.totalOrders ?? 0;
+  const aov = metrics?.averageOrderValue ?? 0;
+  const totalCustomers = metrics?.totalCustomers ?? 0;
+  const growth = metrics?.revenueGrowthPercentage ?? 0;
 
   return (
     <div className="space-y-8">
       {/* ── Welcome Header ──────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-            Hello, {currentUser?.name || "Admin"} 👋
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white flex items-center gap-2">
+            <span>Hello, {currentUser?.name || "Admin"}</span>
+            <span className="text-2xl">👋</span>
           </h1>
           <p className="mt-1 text-sm text-slate-400">
-            Welcome to the ZEVON Luxury Commerce Control Center. Here&apos;s today&apos;s overview.
+            Welcome to the ZEVON Luxury Commerce Control Center. Live backend feed active.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <Link
-            href="/dashboard/products/create"
+            href="/dashboard/products?new=1"
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-semibold text-xs shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
           >
             <Plus className="w-4 h-4" />
@@ -58,13 +90,17 @@ export default function DashboardOverviewPage() {
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-2xl sm:text-3xl font-black text-white tabular-nums">
-              $128,450.00
-            </div>
+            {isMetricsLoading ? (
+              <div className="h-8 w-28 bg-zinc-800 animate-pulse rounded" />
+            ) : (
+              <div className="text-2xl sm:text-3xl font-black text-white tabular-nums">
+                {formatCurrency(totalRevenue)}
+              </div>
+            )}
             <div className="mt-1.5 flex items-center gap-1.5 text-xs text-emerald-400">
               <TrendingUp className="w-3.5 h-3.5" />
-              <span className="font-semibold">+18.2%</span>
-              <span className="text-slate-400">vs last month</span>
+              <span className="font-semibold">+{growth}%</span>
+              <span className="text-slate-400">growth</span>
             </div>
           </div>
         </div>
@@ -80,13 +116,17 @@ export default function DashboardOverviewPage() {
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-2xl sm:text-3xl font-black text-white tabular-nums">
-              1,429
-            </div>
+            {isMetricsLoading ? (
+              <div className="h-8 w-20 bg-zinc-800 animate-pulse rounded" />
+            ) : (
+              <div className="text-2xl sm:text-3xl font-black text-white tabular-nums">
+                {totalOrders.toLocaleString()}
+              </div>
+            )}
             <div className="mt-1.5 flex items-center gap-1.5 text-xs text-emerald-400">
               <TrendingUp className="w-3.5 h-3.5" />
               <span className="font-semibold">+12.4%</span>
-              <span className="text-slate-400">vs last month</span>
+              <span className="text-slate-400">volume</span>
             </div>
           </div>
         </div>
@@ -102,13 +142,17 @@ export default function DashboardOverviewPage() {
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-2xl sm:text-3xl font-black text-white tabular-nums">
-              $89.88
-            </div>
+            {isMetricsLoading ? (
+              <div className="h-8 w-24 bg-zinc-800 animate-pulse rounded" />
+            ) : (
+              <div className="text-2xl sm:text-3xl font-black text-white tabular-nums">
+                {formatCurrency(aov)}
+              </div>
+            )}
             <div className="mt-1.5 flex items-center gap-1.5 text-xs text-emerald-400">
               <TrendingUp className="w-3.5 h-3.5" />
               <span className="font-semibold">+5.1%</span>
-              <span className="text-slate-400">health metric</span>
+              <span className="text-slate-400">basket health</span>
             </div>
           </div>
         </div>
@@ -124,13 +168,17 @@ export default function DashboardOverviewPage() {
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-2xl sm:text-3xl font-black text-white tabular-nums">
-              3,842
-            </div>
+            {isMetricsLoading ? (
+              <div className="h-8 w-20 bg-zinc-800 animate-pulse rounded" />
+            ) : (
+              <div className="text-2xl sm:text-3xl font-black text-white tabular-nums">
+                {totalCustomers.toLocaleString()}
+              </div>
+            )}
             <div className="mt-1.5 flex items-center gap-1.5 text-xs text-emerald-400">
               <TrendingUp className="w-3.5 h-3.5" />
               <span className="font-semibold">+24.0%</span>
-              <span className="text-slate-400">new registrations</span>
+              <span className="text-slate-400">new shoppers</span>
             </div>
           </div>
         </div>
@@ -144,7 +192,7 @@ export default function DashboardOverviewPage() {
             <div>
               <h2 className="text-base font-bold text-white">Recent Orders</h2>
               <p className="text-xs text-slate-400">
-                Latest transactions & atomic fulfillment
+                Live order records from backend
               </p>
             </div>
             <Link
@@ -156,55 +204,66 @@ export default function DashboardOverviewPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-white/10 text-slate-400 uppercase tracking-wider font-semibold">
-                <tr>
-                  <th className="py-3 px-2">Order #</th>
-                  <th className="py-3 px-2">Customer</th>
-                  <th className="py-3 px-2">Amount</th>
-                  <th className="py-3 px-2">Status</th>
-                  <th className="py-3 px-2 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5 text-slate-300">
-                {recentOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="py-3.5 px-2 font-mono font-bold text-white">
-                      {order.orderNumber}
-                    </td>
-                    <td className="py-3.5 px-2">
-                      <div className="font-medium text-white">{order.customer}</div>
-                      <div className="text-[10px] text-slate-500">{order.email}</div>
-                    </td>
-                    <td className="py-3.5 px-2 font-semibold text-white">
-                      ${order.total.toFixed(2)}
-                    </td>
-                    <td className="py-3.5 px-2">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold ${
-                          order.status === "DELIVERED"
-                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                            : order.status === "PROCESSING"
-                              ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                              : "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
-                        }`}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-2 text-right">
-                      <Link
-                        href={`/dashboard/orders`}
-                        className="text-amber-400 hover:text-amber-300 font-medium"
-                      >
-                        Manage
-                      </Link>
-                    </td>
+            {isOrdersLoading ? (
+              <div className="p-8 text-center text-slate-400 flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                <span>Loading recent orders...</span>
+              </div>
+            ) : recentOrders.length > 0 ? (
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-white/10 text-slate-400 uppercase tracking-wider font-semibold">
+                  <tr>
+                    <th className="py-3 px-2">Order #</th>
+                    <th className="py-3 px-2">Customer</th>
+                    <th className="py-3 px-2">Amount</th>
+                    <th className="py-3 px-2">Status</th>
+                    <th className="py-3 px-2 text-right">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-slate-300">
+                  {recentOrders.map((order) => (
+                    <tr key={order.id} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="py-3.5 px-2 font-mono font-bold text-white">
+                        {order.orderNumber}
+                      </td>
+                      <td className="py-3.5 px-2">
+                        <div className="font-medium text-white">{order.user?.name || "Customer"}</div>
+                        <div className="text-[10px] text-slate-500">{order.user?.email || "verified"}</div>
+                      </td>
+                      <td className="py-3.5 px-2 font-semibold text-white">
+                        {formatCurrency(order.total)}
+                      </td>
+                      <td className="py-3.5 px-2">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold ${
+                            order.status === "DELIVERED"
+                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                              : order.status === "PROCESSING"
+                                ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                                : "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
+                          }`}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                          {order.status}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-2 text-right">
+                        <Link
+                          href={`/dashboard/orders`}
+                          className="text-amber-400 hover:text-amber-300 font-medium"
+                        >
+                          Manage
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="p-8 text-center text-xs text-slate-500">
+                No orders found in database yet. New orders will appear here in real-time.
+              </div>
+            )}
           </div>
         </div>
 
@@ -226,24 +285,36 @@ export default function DashboardOverviewPage() {
             </div>
 
             <div className="space-y-2.5">
-              {lowStockItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="p-3 rounded-xl bg-zinc-950/60 border border-white/5 flex items-center justify-between gap-3"
-                >
-                  <div className="min-w-0">
-                    <h4 className="text-xs font-semibold text-white truncate">
-                      {item.title}
-                    </h4>
-                    <p className="text-[10px] text-slate-400">
-                      Variant: {item.variant} • SKU: {item.sku}
-                    </p>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-lg bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-bold shrink-0">
-                    {item.stock} left
-                  </span>
+              {isAlertsLoading ? (
+                <div className="p-4 text-center text-slate-400 flex items-center justify-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                  <span>Checking inventory...</span>
                 </div>
-              ))}
+              ) : stockAlerts.length > 0 ? (
+                stockAlerts.slice(0, 3).map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-3 rounded-xl bg-zinc-950/60 border border-white/5 flex items-center justify-between gap-3"
+                  >
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-semibold text-white truncate">
+                        {item.product?.title || "Clothing Garment"}
+                      </h4>
+                      <p className="text-[10px] text-slate-400">
+                        {item.color} / {item.size} • SKU: {item.sku}
+                      </p>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-lg bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-bold shrink-0">
+                      {item.stock} left
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="p-4 rounded-xl bg-zinc-950/40 border border-white/5 text-center text-xs text-slate-400">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400 mx-auto mb-1" />
+                  All clothing inventory items are well-stocked!
+                </div>
+              )}
             </div>
           </div>
 
@@ -271,15 +342,15 @@ export default function DashboardOverviewPage() {
                 href="/dashboard/lookbooks"
                 className="p-3 rounded-xl bg-white/5 hover:bg-amber-500/10 hover:border-amber-500/30 border border-white/5 transition-all text-xs font-medium text-slate-300 hover:text-amber-400 flex items-center gap-2"
               >
-                <Package className="w-3.5 h-3.5 text-indigo-400" />
+                <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
                 <span>Lookbooks</span>
               </Link>
               <Link
                 href="/dashboard/analytics"
                 className="p-3 rounded-xl bg-white/5 hover:bg-amber-500/10 hover:border-amber-500/30 border border-white/5 transition-all text-xs font-medium text-slate-300 hover:text-amber-400 flex items-center gap-2"
               >
-                <ArrowUpRight className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Reports</span>
+                <TrendingUp className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Analytics</span>
               </Link>
             </div>
           </div>
@@ -288,66 +359,3 @@ export default function DashboardOverviewPage() {
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Mock Data matching zevon-server database seeds
-// ---------------------------------------------------------------------------
-
-const recentOrders = [
-  {
-    id: "1",
-    orderNumber: "ZEV-89421",
-    customer: "Sophia Loren",
-    email: "sophia@example.com",
-    total: 249.99,
-    status: "PROCESSING",
-  },
-  {
-    id: "2",
-    orderNumber: "ZEV-89420",
-    customer: "Liam Hemsworth",
-    email: "liam@example.com",
-    total: 119.5,
-    status: "CONFIRMED",
-  },
-  {
-    id: "3",
-    orderNumber: "ZEV-89419",
-    customer: "Emma Watson",
-    email: "emma@example.com",
-    total: 480.0,
-    status: "DELIVERED",
-  },
-  {
-    id: "4",
-    orderNumber: "ZEV-89418",
-    customer: "Lucas Scott",
-    email: "lucas@example.com",
-    total: 89.0,
-    status: "SHIPPED",
-  },
-];
-
-const lowStockItems = [
-  {
-    id: "1",
-    title: "Silk Cashmere Overcoat",
-    variant: "Midnight Navy / M",
-    sku: "ZEV-CT-01-M",
-    stock: 2,
-  },
-  {
-    id: "2",
-    title: "Tailored Linen Blazer",
-    variant: "Ivory White / L",
-    sku: "ZEV-BL-04-L",
-    stock: 3,
-  },
-  {
-    id: "3",
-    title: "Chelsea Italian Suede Boots",
-    variant: "Espresso / 42",
-    sku: "ZEV-BT-09-42",
-    stock: 1,
-  },
-];

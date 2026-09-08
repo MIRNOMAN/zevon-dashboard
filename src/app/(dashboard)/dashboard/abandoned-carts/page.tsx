@@ -2,6 +2,7 @@
 
 import React from "react";
 import { ShoppingCart, Send } from "lucide-react";
+import { formatPrice } from "@/lib/utils";
 
 export default function AbandonedCartsPage() {
   return (
@@ -36,7 +37,7 @@ export default function AbandonedCartsPage() {
                   <div className="font-semibold text-white">{c.customer}</div>
                   <div className="text-[10px] text-slate-500">{c.email}</div>
                 </td>
-                <td className="py-3.5 px-3 font-bold text-white">${c.value.toFixed(2)}</td>
+                <td className="py-3.5 px-3 font-bold text-white">{formatPrice(c.value)}</td>
                 <td className="py-3.5 px-3 text-slate-400">{c.date}</td>
                 <td className="py-3.5 px-3">
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">

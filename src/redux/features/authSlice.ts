@@ -26,45 +26,16 @@ interface AuthState {
 }
 
 // ---------------------------------------------------------------------------
-// Helper: Load initial state safely from localStorage
+// Initial state (Deterministic across SSR and Client Initial Render)
 // ---------------------------------------------------------------------------
 
-const loadInitialState = (): AuthState => {
-  if (typeof window === "undefined") {
-    return {
-      user: null,
-      accessToken: null,
-      refreshToken: null,
-      isAuthenticated: false,
-      isInitialized: false,
-    };
-  }
-
-  try {
-    const accessToken = localStorage.getItem("zevon_access_token");
-    const refreshToken = localStorage.getItem("zevon_refresh_token");
-    const userJson = localStorage.getItem("zevon_user");
-    const user = userJson ? (JSON.parse(userJson) as User) : null;
-
-    return {
-      user,
-      accessToken,
-      refreshToken,
-      isAuthenticated: Boolean(accessToken && user),
-      isInitialized: true,
-    };
-  } catch {
-    return {
-      user: null,
-      accessToken: null,
-      refreshToken: null,
-      isAuthenticated: false,
-      isInitialized: true,
-    };
-  }
+const initialState: AuthState = {
+  user: null,
+  accessToken: null,
+  refreshToken: null,
+  isAuthenticated: false,
+  isInitialized: false,
 };
-
-const initialState: AuthState = loadInitialState();
 
 // ---------------------------------------------------------------------------
 // Slice
@@ -74,6 +45,26 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
+    /**
+     * Rehydrate auth on client mount
+     */
+    initializeAuth: (
+      state,
+      action: PayloadAction<{
+        user: User | null;
+        accessToken: string | null;
+        refreshToken: string | null;
+      }>,
+    ) => {
+      state.user = action.payload.user;
+      state.accessToken = action.payload.accessToken;
+      state.refreshToken = action.payload.refreshToken;
+      state.isAuthenticated = Boolean(
+        action.payload.accessToken && action.payload.user,
+      );
+      state.isInitialized = true;
+    },
+
     /**
      * Set user + tokens after login/register.
      */
@@ -175,7 +166,7 @@ const authSlice = createSlice({
 // Actions
 // ---------------------------------------------------------------------------
 
-export const { setCredentials, setUser, updateAccessToken, logout } =
+export const { initializeAuth, setCredentials, setUser, updateAccessToken, logout } =
   authSlice.actions;
 
 // ---------------------------------------------------------------------------

@@ -75,6 +75,7 @@ export interface VerifyRegisterResponseData {
 // ---------------------------------------------------------------------------
 
 export const authApi = baseApi.injectEndpoints({
+  overrideExisting: true,
   endpoints: (builder) => ({
     // 1. Login
     login: builder.mutation<ApiResponse<AuthData>, LoginRequest>({

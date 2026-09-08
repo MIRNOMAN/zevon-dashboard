@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Gift, Plus } from "lucide-react";
+import { formatPrice } from "@/lib/utils";
 
 export default function GiftCardsPage() {
   return (
@@ -27,7 +28,7 @@ export default function GiftCardsPage() {
           <div key={c.code} className="p-5 rounded-2xl bg-zinc-900/60 border border-white/10 backdrop-blur-md space-y-3">
             <div className="flex items-center justify-between">
               <span className="font-mono font-bold text-amber-400 text-xs">{c.code}</span>
-              <span className="text-sm font-bold text-white">${c.balance.toFixed(2)}</span>
+              <span className="text-sm font-bold text-white">{formatPrice(c.balance)}</span>
             </div>
             <p className="text-xs text-slate-400">Recipient: {c.recipient}</p>
             <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-white/5">

@@ -2,6 +2,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import { baseApi } from "./api/baseApi";
 import authReducer from "./features/authSlice";
 import productReducer from "./features/productSlice";
+import currencyReducer from "./features/currencySlice";
 
 // ---------------------------------------------------------------------------
 // Store factory (one store per client mount in App Router)
@@ -12,6 +13,7 @@ export function makeStore() {
     reducer: {
       auth: authReducer,
       products: productReducer,
+      currency: currencyReducer,
       [baseApi.reducerPath]: baseApi.reducer,
     },
     middleware: (getDefaultMiddleware) =>

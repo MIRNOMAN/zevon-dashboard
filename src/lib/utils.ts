@@ -9,6 +9,20 @@ export function cn(...inputs: ClassValue[]): string {
 }
 
 /**
+ * Format price safely regardless of number, string, Decimal, or null/undefined
+ */
+export function formatPrice(price: unknown, currency = "$"): string {
+  if (price === null || price === undefined || price === "") {
+    return `${currency}0.00`;
+  }
+  const numeric = typeof price === "number" ? price : parseFloat(String(price));
+  if (isNaN(numeric)) {
+    return `${currency}0.00`;
+  }
+  return `${currency}${numeric.toFixed(2)}`;
+}
+
+/**
  * Format a date to a human-readable string.
  */
 export function formatDate(

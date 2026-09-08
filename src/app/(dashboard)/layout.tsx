@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   BarChart3,
   Package,
-  PackagePlus,
   FolderTree,
   AlertTriangle,
   Sparkles,
@@ -26,6 +25,7 @@ import {
   Truck,
   Store,
   Leaf,
+  Coins,
   Settings,
   LogOut,
   Menu,
@@ -35,6 +35,7 @@ import {
   ShieldAlert,
   Loader2,
 } from "lucide-react";
+import CurrencySwitcher from "@/components/CurrencySwitcher";
 import { useAppSelector } from "@/redux/hooks";
 import {
   selectCurrentUser,
@@ -71,7 +72,6 @@ const navGroups: NavGroup[] = [
     title: "Catalog & Stock",
     items: [
       { icon: Package, label: "All Products", href: "/dashboard/products" },
-      { icon: PackagePlus, label: "Add Product", href: "/dashboard/products/create" },
       { icon: FolderTree, label: "Categories", href: "/dashboard/categories" },
       { icon: AlertTriangle, label: "Stock Alerts", href: "/dashboard/stock-alerts", badge: "Low" },
       { icon: Sparkles, label: "Lookbooks & Outfits", href: "/dashboard/lookbooks" },
@@ -106,6 +106,7 @@ const navGroups: NavGroup[] = [
   {
     title: "Operations & Store",
     items: [
+      { icon: Coins, label: "Currency & Forex", href: "/dashboard/currency" },
       { icon: Truck, label: "Shipping & Delivery", href: "/dashboard/shipping" },
       { icon: Store, label: "Physical Stores", href: "/dashboard/stores" },
       { icon: Leaf, label: "Sustainability", href: "/dashboard/sustainability" },
@@ -149,17 +150,6 @@ export default function DashboardLayout({
       router.push("/login");
     }
   };
-
-  if (!isInitialized) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
-        <div className="flex items-center gap-3 text-amber-400">
-          <Loader2 className="w-6 h-6 animate-spin" />
-          <span>Authenticating session...</span>
-        </div>
-      </div>
-    );
-  }
 
   // Get active item title for breadcrumb
   let activeTitle = "Overview";
@@ -371,6 +361,9 @@ export default function DashboardLayout({
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4">
+            {/* Currency Switcher */}
+            <CurrencySwitcher />
+
             {/* Quick Status / Environment Badge */}
             <div className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
