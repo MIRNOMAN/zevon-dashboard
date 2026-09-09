@@ -71,17 +71,25 @@ export interface ProductItem {
   title: string;
   slug: string;
   description: string;
+  details?: string | null;
+  fabricSpecs?: string | null;
+  washCare?: string | null;
+  tags?: string[];
   basePrice: number | string;
   discountPrice?: number | string | null;
   gender: string;
   season: string;
   isActive: boolean;
   isFeatured: boolean;
+  categoryId?: string;
   category?: { id: string; name: string; slug: string };
-  images?: Array<{ url: string; isPrimary: boolean }>;
-  variants?: Array<{ id: string; sku: string; stock: number; size: string; color: string }>;
+  images?: Array<{ id?: string; url: string; isPrimary: boolean; altText?: string | null }>;
+  variants?: Array<{ id: string; sku: string; stock: number; size: string; color: string; colorCode?: string }>;
   _count?: { variants: number; reviews: number };
+  createdAt?: string;
+  updatedAt?: string;
 }
+
 
 export interface CategoryItem {
   id: string;
@@ -131,11 +139,49 @@ export interface BannerItem {
   subtitle?: string | null;
   badge?: string | null;
   imageUrl: string;
+  mobileImageUrl?: string | null;
   ctaText?: string | null;
   linkUrl?: string | null;
   placement: string;
   sortOrder: number;
   isActive: boolean;
+  startDate?: string | null;
+  endDate?: string | null;
+}
+
+export interface CreateBannerInput {
+  title: string;
+  subtitle?: string;
+  badge?: string;
+  imageUrl: string;
+  mobileImageUrl?: string;
+  ctaText?: string;
+  linkUrl?: string;
+  placement?: string;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
+export interface ReviewAdminItem {
+  id: string;
+  rating: number;
+  comment: string;
+  images: string[];
+  isVerifiedPurchase: boolean;
+  createdAt: string;
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+    avatarUrl?: string | null;
+  };
+  product?: {
+    id: string;
+    title: string;
+    slug: string;
+    basePrice: number | string;
+    images?: Array<{ url: string; isPrimary: boolean }>;
+  };
 }
 
 export interface UserDirectoryItem {
@@ -278,6 +324,11 @@ export const dashboardApi = baseApi.injectEndpoints({
       providesTags: ["Product"],
     }),
 
+    getProductById: builder.query<ApiResponse<ProductItem>, string>({
+      query: (id) => `/products/admin/${id}`,
+      providesTags: ["Product"],
+    }),
+
     createProduct: builder.mutation<ApiResponse<ProductItem>, CreateProductInput>({
       query: (body) => ({
         url: "/products",
@@ -287,6 +338,31 @@ export const dashboardApi = baseApi.injectEndpoints({
       invalidatesTags: ["Product", "Analytics"],
     }),
 
+    updateProduct: builder.mutation<ApiResponse<ProductItem>, { id: string; data: Partial<CreateProductInput> }>({
+      query: ({ id, data }) => ({
+        url: `/products/${id}`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: ["Product", "Analytics"],
+    }),
+
+    togglePublishProduct: builder.mutation<ApiResponse<ProductItem>, string>({
+      query: (id) => ({
+        url: `/products/${id}/toggle-publish`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["Product"],
+    }),
+
+    toggleFeaturedProduct: builder.mutation<ApiResponse<ProductItem>, string>({
+      query: (id) => ({
+        url: `/products/${id}/toggle-featured`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["Product"],
+    }),
+
     deleteProduct: builder.mutation<ApiResponse<{ message: string }>, string>({
       query: (id) => ({
         url: `/products/${id}`,
@@ -294,6 +370,7 @@ export const dashboardApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Product", "Analytics"],
     }),
+
 
     // 4. Categories
     getCategories: builder.query<ApiResponse<CategoryItem[]>, void>({
@@ -311,6 +388,31 @@ export const dashboardApi = baseApi.injectEndpoints({
         url: "/categories",
         method: "POST",
         body,
+      }),
+      invalidatesTags: ["Category"],
+    }),
+
+    updateCategory: builder.mutation<ApiResponse<CategoryItem>, { id: string; data: Partial<CategoryItem> }>({
+      query: ({ id, data }) => ({
+        url: `/categories/${id}`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: ["Category"],
+    }),
+
+    deleteCategory: builder.mutation<ApiResponse<{ message: string }>, string>({
+      query: (id) => ({
+        url: `/categories/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Category"],
+    }),
+
+    toggleCategoryStatus: builder.mutation<ApiResponse<CategoryItem>, string>({
+      query: (id) => ({
+        url: `/categories/${id}/toggle-status`,
+        method: "PATCH",
       }),
       invalidatesTags: ["Category"],
     }),
@@ -345,18 +447,86 @@ export const dashboardApi = baseApi.injectEndpoints({
     }),
 
     // 7. Banners
-    getBanners: builder.query<ApiResponse<BannerItem[]>, void>({
-      query: () => "/banners",
-      providesTags: ["Product"],
+    getBanners: builder.query<ApiResponse<BannerItem[]>, { placement?: string } | void>({
+      query: (params) => ({
+        url: "/banners",
+        params: params ?? undefined,
+      }),
+      providesTags: ["Banner"],
     }),
 
-    // 8. Users
+    getAdminBanners: builder.query<
+      ApiResponse<{ banners: BannerItem[]; total: number } | BannerItem[]>,
+      { page?: number; limit?: number; placement?: string; search?: string } | void
+    >({
+      query: (params) => ({
+        url: "/banners/admin/all",
+        params: params ?? undefined,
+      }),
+      providesTags: ["Banner"],
+    }),
+
+    createBanner: builder.mutation<ApiResponse<BannerItem>, CreateBannerInput>({
+      query: (body) => ({
+        url: "/banners",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Banner"],
+    }),
+
+    updateBanner: builder.mutation<ApiResponse<BannerItem>, { id: string; data: Partial<CreateBannerInput> }>({
+      query: ({ id, data }) => ({
+        url: `/banners/${id}`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: ["Banner"],
+    }),
+
+    deleteBanner: builder.mutation<ApiResponse<{ message: string }>, string>({
+      query: (id) => ({
+        url: `/banners/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Banner"],
+    }),
+
+    toggleBannerStatus: builder.mutation<ApiResponse<BannerItem>, string>({
+      query: (id) => ({
+        url: `/banners/${id}/toggle-status`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["Banner"],
+    }),
+
+    // 8. Reviews (Admin & Moderation)
+    getAdminReviews: builder.query<
+      ApiResponse<{ reviews: ReviewAdminItem[]; meta?: { total: number; page: number; totalPages: number } } | ReviewAdminItem[]>,
+      { page?: number; limit?: number; rating?: number; search?: string } | void
+    >({
+      query: (params) => ({
+        url: "/reviews/admin/all",
+        params: params ?? undefined,
+      }),
+      providesTags: ["Review"],
+    }),
+
+    deleteReview: builder.mutation<ApiResponse<{ message: string }>, string>({
+      query: (id) => ({
+        url: `/reviews/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Review", "Product"],
+    }),
+
+    // 9. Users
     getUsers: builder.query<ApiResponse<{ users: UserDirectoryItem[]; total: number } | UserDirectoryItem[]>, void>({
       query: () => "/users",
       providesTags: ["User"],
     }),
 
-    // 9. Flash Sales
+    // 10. Flash Sales
     getFlashSales: builder.query<ApiResponse<{ flashSales: FlashSaleItem[]; total: number } | FlashSaleItem[]>, void>({
       query: () => "/flash-sales/admin/all",
       providesTags: ["Product"],
@@ -371,7 +541,7 @@ export const dashboardApi = baseApi.injectEndpoints({
       invalidatesTags: ["Product"],
     }),
 
-    // 10. Returns
+    // 11. Returns
     getReturns: builder.query<ApiResponse<{ returns: ReturnItem[]; total: number } | ReturnItem[]>, void>({
       query: () => "/returns",
       providesTags: ["Order"],
@@ -386,9 +556,10 @@ export const dashboardApi = baseApi.injectEndpoints({
       invalidatesTags: ["Order"],
     }),
 
-    // 11. Shipping Zones
+    // 12. Shipping Zones
     getShippingZones: builder.query<ApiResponse<{ zones: ShippingZoneItem[]; total: number } | ShippingZoneItem[]>, void>({
       query: () => "/shipping",
+      providesTags: ["Shipping"],
     }),
 
     createShippingZone: builder.mutation<ApiResponse<ShippingZoneItem>, Record<string, unknown>>({
@@ -397,29 +568,55 @@ export const dashboardApi = baseApi.injectEndpoints({
         method: "POST",
         body,
       }),
+      invalidatesTags: ["Shipping"],
     }),
 
-    // 12. Stores
+    updateShippingZone: builder.mutation<ApiResponse<ShippingZoneItem>, { id: string; data: Record<string, unknown> }>({
+      query: ({ id, data }) => ({
+        url: `/shipping/${id}`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: ["Shipping"],
+    }),
+
+    deleteShippingZone: builder.mutation<ApiResponse<{ message: string }>, string>({
+      query: (id) => ({
+        url: `/shipping/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Shipping"],
+    }),
+
+    toggleShippingZoneStatus: builder.mutation<ApiResponse<ShippingZoneItem>, string>({
+      query: (id) => ({
+        url: `/shipping/${id}/toggle-status`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["Shipping"],
+    }),
+
+    // 13. Stores
     getStores: builder.query<ApiResponse<StoreItem[]>, void>({
       query: () => "/stores",
     }),
 
-    // 13. Lookbooks
+    // 14. Lookbooks
     getLookbooks: builder.query<ApiResponse<{ lookbooks: LookbookItem[]; total: number } | LookbookItem[]>, void>({
       query: () => "/lookbooks",
     }),
 
-    // 14. Abandoned Carts
+    // 15. Abandoned Carts
     getAbandonedCarts: builder.query<ApiResponse<unknown>, void>({
       query: () => "/abandoned-carts/summary",
     }),
 
-    // 15. Sustainability
+    // 16. Sustainability
     getSustainability: builder.query<ApiResponse<unknown>, void>({
       query: () => "/sustainability/initiatives",
     }),
 
-    // 16. Currency & Exchange Rates
+    // 17. Currency & Exchange Rates
     getCurrencyRates: builder.query<ApiResponse<CurrencyRatesResponse>, void>({
       query: () => "/currency/rates",
       providesTags: ["Analytics"],
@@ -448,7 +645,7 @@ export const dashboardApi = baseApi.injectEndpoints({
       invalidatesTags: ["Analytics"],
     }),
 
-    // 17. MinIO Media Upload
+    // 18. MinIO Media Upload
     uploadImage: builder.mutation<
       ApiResponse<{ url: string; key: string; originalName: string; size: number }>,
       FormData
@@ -471,16 +668,30 @@ export const {
   useGetInventoryAlertsQuery,
   useGetAdminProductsQuery,
   useGetPublicProductsQuery,
+  useGetProductByIdQuery,
   useCreateProductMutation,
+  useUpdateProductMutation,
+  useTogglePublishProductMutation,
+  useToggleFeaturedProductMutation,
   useDeleteProductMutation,
   useGetCategoriesQuery,
   useGetCategoryTreeQuery,
   useCreateCategoryMutation,
+  useUpdateCategoryMutation,
+  useDeleteCategoryMutation,
+  useToggleCategoryStatusMutation,
   useGetAdminOrdersQuery,
   useGetOrderMetricsQuery,
   useGetCouponsQuery,
   useCreateCouponMutation,
   useGetBannersQuery,
+  useGetAdminBannersQuery,
+  useCreateBannerMutation,
+  useUpdateBannerMutation,
+  useDeleteBannerMutation,
+  useToggleBannerStatusMutation,
+  useGetAdminReviewsQuery,
+  useDeleteReviewMutation,
   useGetUsersQuery,
   useGetFlashSalesQuery,
   useCreateFlashSaleMutation,
@@ -488,6 +699,9 @@ export const {
   useUpdateReturnStatusMutation,
   useGetShippingZonesQuery,
   useCreateShippingZoneMutation,
+  useUpdateShippingZoneMutation,
+  useDeleteShippingZoneMutation,
+  useToggleShippingZoneStatusMutation,
   useGetStoresQuery,
   useGetLookbooksQuery,
   useGetAbandonedCartsQuery,
@@ -498,3 +712,4 @@ export const {
   useUpdateCurrencyRatesMutation,
   useUploadImageMutation,
 } = dashboardApi;
+
