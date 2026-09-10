@@ -27,10 +27,9 @@ import {
   useDeleteProductMutation,
   useCreateProductMutation,
   useUpdateProductMutation,
-  useGetCategoriesQuery,
-  type ProductItem,
-  type ProductVariantInput,
-} from "@/redux/api/dashboardApi";
+} from "@/redux/api/productsApi";
+import { useGetCategoriesQuery } from "@/redux/api/categoriesApi";
+import type { ProductItem, ProductVariantInput } from "@/types/products";
 import { useFormatPrice } from "@/lib/useFormatPrice";
 import { getErrorMessage } from "@/lib/utils";
 import MultiImageUploader, { type GalleryImage } from "@/components/MultiImageUploader";

@@ -32,8 +32,8 @@ import {
   useUpdateCategoryMutation,
   useDeleteCategoryMutation,
   useToggleCategoryStatusMutation,
-  type CategoryItem,
-} from "@/redux/api/dashboardApi";
+} from "@/redux/api/categoriesApi";
+import type { CategoryItem } from "@/types/categories";
 import ImageUploader from "@/components/ImageUploader";
 import { getErrorMessage } from "@/lib/utils";
 

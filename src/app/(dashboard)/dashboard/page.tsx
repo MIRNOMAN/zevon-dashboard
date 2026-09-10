@@ -36,7 +36,12 @@ export default function DashboardOverviewPage() {
     useGetAdminOrdersQuery({ limit: 5 });
 
   const metrics = metricsRes?.data;
-  const stockAlerts = alertsRes?.data || [];
+  const rawAlerts = alertsRes?.data;
+  const stockAlerts = Array.isArray(rawAlerts)
+    ? rawAlerts
+    : rawAlerts && "alerts" in rawAlerts && Array.isArray(rawAlerts.alerts)
+      ? rawAlerts.alerts
+      : [];
 
   // Extract orders
   const rawOrders = ordersRes?.data;
