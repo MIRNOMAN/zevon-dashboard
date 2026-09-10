@@ -12,3 +12,4 @@ export * from "./lookbooks";
 export * from "./currency";
 export * from "./flashSales";
 export * from "./upload";
+export * from "./returns";

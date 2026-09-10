@@ -118,15 +118,8 @@ export interface AssignCourierInput {
   estimatedDeliveryDate?: string;
 }
 
-export interface ReturnItem {
-  id: string;
-  orderId?: string;
-  orderNumber?: string;
-  reason: string;
-  status: "REQUESTED" | "APPROVED" | "REJECTED" | "COMPLETED";
-  createdAt: string;
-  user?: { name: string; email: string };
-}
+import type { ReturnRequestItem } from "./returns";
+export type ReturnItem = ReturnRequestItem;
 
 export interface OrderQueryParams {
   page?: number;

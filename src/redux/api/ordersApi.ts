@@ -73,26 +73,6 @@ export const ordersApi = baseApi.injectEndpoints({
       query: (id) => `/orders/${id}/invoice`,
     }),
 
-    getReturns: builder.query<
-      ApiResponse<{ returns: ReturnItem[]; total: number } | ReturnItem[]>,
-      void
-    >({
-      query: () => "/returns",
-      providesTags: ["Order"],
-    }),
-
-    updateReturnStatus: builder.mutation<
-      ApiResponse<ReturnItem>,
-      { id: string; status: string; adminNotes?: string }
-    >({
-      query: ({ id, ...body }) => ({
-        url: `/returns/${id}/status`,
-        method: "PATCH",
-        body,
-      }),
-      invalidatesTags: ["Order"],
-    }),
-
     getAbandonedCarts: builder.query<ApiResponse<unknown>, void>({
       query: () => "/abandoned-carts/summary",
     }),
@@ -107,7 +87,5 @@ export const {
   useAssignCourierMutation,
   useGetOrderMetricsQuery,
   useGetOrderInvoiceQuery,
-  useGetReturnsQuery,
-  useUpdateReturnStatusMutation,
   useGetAbandonedCartsQuery,
 } = ordersApi;
