@@ -13,3 +13,4 @@ export * from "./currency";
 export * from "./flashSales";
 export * from "./upload";
 export * from "./returns";
+export * from "./abandonedCart";

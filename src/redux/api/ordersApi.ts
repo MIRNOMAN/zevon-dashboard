@@ -72,10 +72,6 @@ export const ordersApi = baseApi.injectEndpoints({
     getOrderInvoice: builder.query<ApiResponse<unknown>, string>({
       query: (id) => `/orders/${id}/invoice`,
     }),
-
-    getAbandonedCarts: builder.query<ApiResponse<unknown>, void>({
-      query: () => "/abandoned-carts/summary",
-    }),
   }),
 });
 
@@ -87,5 +83,4 @@ export const {
   useAssignCourierMutation,
   useGetOrderMetricsQuery,
   useGetOrderInvoiceQuery,
-  useGetAbandonedCartsQuery,
 } = ordersApi;
