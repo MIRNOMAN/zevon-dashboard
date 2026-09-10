@@ -1,5 +1,11 @@
 import { baseApi, type ApiResponse } from "./baseApi";
-import { setCredentials, logout as logoutAction, type User, type UserRole } from "../features/authSlice";
+import {
+  setCredentials,
+  setUser,
+  logout as logoutAction,
+  type User,
+  type UserRole,
+} from "../features/authSlice";
 
 // ---------------------------------------------------------------------------
 // Request DTOs matching zevon-server
@@ -221,6 +227,16 @@ export const authApi = baseApi.injectEndpoints({
     getMe: builder.query<ApiResponse<User>, void>({
       query: () => "/auth/me",
       providesTags: ["User"],
+      async onQueryStarted(_args, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          if (data && data.data) {
+            dispatch(setUser(data.data));
+          }
+        } catch {
+          // Token might be invalid or network error
+        }
+      },
     }),
   }),
 });

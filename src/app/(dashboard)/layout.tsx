@@ -42,7 +42,7 @@ import {
   selectIsAuthenticated,
   selectIsAuthInitialized,
 } from "@/redux/features/authSlice";
-import { useLogoutMutation } from "@/redux/api/authApi";
+import { useLogoutMutation, useGetMeQuery } from "@/redux/api/authApi";
 
 // ---------------------------------------------------------------------------
 // Sidebar Navigation Groupings based on zevon-server Modules
@@ -129,12 +129,19 @@ export default function DashboardLayout({
   const isInitialized = useAppSelector(selectIsAuthInitialized);
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
 
+  // Fetch live current user profile if authenticated
+  const { data: meData } = useGetMeQuery(undefined, {
+    skip: !isAuthenticated || !isInitialized,
+  });
+
+  const user = meData?.data || currentUser;
+
   // Close mobile menu on route change
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  // Auth Guard
+  // Auth Guard: redirect to login if not authenticated once initialized
   useEffect(() => {
     if (isInitialized && !isAuthenticated) {
       router.replace("/login");
@@ -150,6 +157,45 @@ export default function DashboardLayout({
       router.push("/login");
     }
   };
+
+  // Helper to render dynamic avatar
+  const renderUserAvatar = (size: "sm" | "md" = "md") => {
+    const sizeClasses = size === "sm" ? "w-8 h-8 text-xs" : "w-9 h-9 text-sm";
+    const initial = (user?.name?.trim().charAt(0) || user?.email?.charAt(0) || "U").toUpperCase();
+
+    return (
+      <div
+        className={`${sizeClasses} rounded-full overflow-hidden flex items-center justify-center shrink-0 bg-gradient-to-tr from-amber-500 to-yellow-300 text-black font-bold shadow-md`}
+      >
+        {user?.avatarUrl ? (
+          <img
+            src={user.avatarUrl}
+            alt={user.name || "User Avatar"}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <span>{initial}</span>
+        )}
+      </div>
+    );
+  };
+
+  // Show splash loader while checking auth or redirecting unauthenticated users
+  if (!isInitialized || !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-300 flex items-center justify-center font-bold text-black text-xl shadow-xl shadow-amber-500/20 animate-pulse">
+            Z
+          </div>
+          <div className="flex items-center gap-2 text-amber-400 text-sm font-medium">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>Verifying session...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Get active item title for breadcrumb
   let activeTitle = "Overview";
@@ -232,17 +278,15 @@ export default function DashboardLayout({
         <div className="border-t border-white/10 p-4 bg-zinc-900/40">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-300 text-black font-bold text-sm flex items-center justify-center shrink-0">
-                {currentUser?.name?.charAt(0) || "A"}
-              </div>
+              {renderUserAvatar("md")}
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-white truncate">
-                  {currentUser?.name || "Admin User"}
+                  {user?.name || "User"}
                 </p>
                 <div className="flex items-center gap-1.5">
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400" />
                   <span className="text-[10px] text-amber-400 font-semibold uppercase">
-                    {currentUser?.role || "ADMIN"}
+                    {user?.role || "USER"}
                   </span>
                 </div>
               </div>
@@ -320,7 +364,19 @@ export default function DashboardLayout({
               ))}
             </div>
 
-            <div className="border-t border-white/10 p-4">
+            <div className="border-t border-white/10 p-4 space-y-3">
+              <div className="flex items-center gap-2.5 overflow-hidden">
+                {renderUserAvatar("sm")}
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-white truncate">
+                    {user?.name || "User"}
+                  </p>
+                  <span className="text-[10px] text-amber-400 font-semibold uppercase">
+                    {user?.role || "USER"}
+                  </span>
+                </div>
+              </div>
+
               <button
                 type="button"
                 onClick={handleLogout}
@@ -364,12 +420,6 @@ export default function DashboardLayout({
             {/* Currency Switcher */}
             <CurrencySwitcher />
 
-            {/* Quick Status / Environment Badge */}
-            <div className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Backend Connected (Port 5000)</span>
-            </div>
-
             {/* Notifications */}
             <button
               type="button"
@@ -383,15 +433,13 @@ export default function DashboardLayout({
             {/* User Avatar & Logout */}
             <div className="flex items-center gap-3 pl-2 border-l border-white/10">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-300 text-black font-bold text-xs flex items-center justify-center shadow-md">
-                  {currentUser?.name?.charAt(0) || "A"}
-                </div>
+                {renderUserAvatar("sm")}
                 <div className="hidden sm:block text-left">
                   <span className="text-xs font-semibold text-white block leading-tight">
-                    {currentUser?.name || "Admin"}
+                    {user?.name || "User"}
                   </span>
                   <span className="text-[10px] text-amber-400 font-semibold uppercase tracking-wider block">
-                    {currentUser?.role || "ADMIN"}
+                    {user?.role || "USER"}
                   </span>
                 </div>
               </div>

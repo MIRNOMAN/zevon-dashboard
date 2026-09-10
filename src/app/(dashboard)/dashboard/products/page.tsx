@@ -18,6 +18,8 @@ import {
   PackagePlus,
   Eye,
   Pencil,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {
   useGetAdminProductsQuery,
@@ -31,7 +33,7 @@ import {
 } from "@/redux/api/dashboardApi";
 import { useFormatPrice } from "@/lib/useFormatPrice";
 import { getErrorMessage } from "@/lib/utils";
-import ImageUploader from "@/components/ImageUploader";
+import MultiImageUploader, { type GalleryImage } from "@/components/MultiImageUploader";
 
 function ProductsContent() {
   const searchParams = useSearchParams();
@@ -43,6 +45,7 @@ function ProductsContent() {
 
   // Modals state
   const [viewingProduct, setViewingProduct] = useState<ProductItem | null>(null);
+  const [viewingImageIndex, setViewingImageIndex] = useState(0);
   const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<ProductItem | null>(null);
 
@@ -68,7 +71,7 @@ function ProductsContent() {
   const [season, setSeason] = useState("SS/26");
   const [fabricSpecs, setFabricSpecs] = useState("100% Super-Combed Organic Cotton, 380 GSM Heavy Interlock Weave");
   const [washCare, setWashCare] = useState("Cold machine wash inside out. Do not tumble dry.");
-  const [imageUrl, setImageUrl] = useState("");
+  const [images, setImages] = useState<GalleryImage[]>([]);
   const [isFeatured, setIsFeatured] = useState(true);
   const [variants, setVariants] = useState<ProductVariantInput[]>([
     { sku: "ZEV-TEE-BLK-S", color: "Onyx Black", colorCode: "#111111", size: "S", stock: 25 },
@@ -86,7 +89,7 @@ function ProductsContent() {
   const [editSeason, setEditSeason] = useState("SS/26");
   const [editFabricSpecs, setEditFabricSpecs] = useState("");
   const [editWashCare, setEditWashCare] = useState("");
-  const [editImageUrl, setEditImageUrl] = useState("");
+  const [editImages, setEditImages] = useState<GalleryImage[]>([]);
   const [editIsFeatured, setEditIsFeatured] = useState(false);
   const [editVariants, setEditVariants] = useState<ProductVariantInput[]>([]);
 
@@ -106,6 +109,12 @@ function ProductsContent() {
     }
   }, [categories, categoryId]);
 
+  // Handle open view modal
+  const openViewModal = (product: ProductItem) => {
+    setViewingProduct(product);
+    setViewingImageIndex(0);
+  };
+
   // Populate edit form when a product is chosen for editing
   const openEditModal = (product: ProductItem) => {
     setEditingProduct(product);
@@ -120,7 +129,21 @@ function ProductsContent() {
     setEditFabricSpecs(product.fabricSpecs || "");
     setEditWashCare(product.washCare || "");
     setEditIsFeatured(!!product.isFeatured);
-    setEditImageUrl(product.images?.[0]?.url || "");
+
+    // Populate existing images
+    if (product.images && product.images.length > 0) {
+      setEditImages(
+        product.images.map((img, idx) => ({
+          id: img.id,
+          url: img.url,
+          altText: img.altText || `${product.title} - View ${idx + 1}`,
+          isPrimary: !!img.isPrimary,
+          sortOrder: idx,
+        }))
+      );
+    } else {
+      setEditImages([]);
+    }
 
     if (product.variants && product.variants.length > 0) {
       setEditVariants(
@@ -267,6 +290,14 @@ function ProductsContent() {
       return;
     }
 
+    // Ensure at least one image is primary if images exist
+    const finalImages = images.map((img, idx) => ({
+      url: img.url.trim(),
+      altText: img.altText?.trim() || `${title.trim()} - View ${idx + 1}`,
+      isPrimary: images.some((i) => i.isPrimary) ? !!img.isPrimary : idx === 0,
+      sortOrder: idx,
+    }));
+
     const payload = {
       title: title.trim(),
       description: description.trim(),
@@ -283,9 +314,7 @@ function ProductsContent() {
         ...v,
         stock: Number(v.stock) || 0,
       })),
-      images: imageUrl
-        ? [{ url: imageUrl.trim(), altText: title.trim(), isPrimary: true }]
-        : [],
+      images: finalImages,
     };
 
     try {
@@ -295,6 +324,7 @@ function ProductsContent() {
       setDescription("");
       setBasePrice("");
       setDiscountPrice("");
+      setImages([]);
       setActionMessage(`Product "${payload.title}" created & published successfully!`);
       setTimeout(() => setActionMessage(null), 3500);
     } catch (err: unknown) {
@@ -324,6 +354,14 @@ function ProductsContent() {
       return;
     }
 
+    // Ensure at least one image is primary if images exist
+    const finalImages = editImages.map((img, idx) => ({
+      url: img.url.trim(),
+      altText: img.altText?.trim() || `${editTitle.trim()} - View ${idx + 1}`,
+      isPrimary: editImages.some((i) => i.isPrimary) ? !!img.isPrimary : idx === 0,
+      sortOrder: idx,
+    }));
+
     const payload = {
       title: editTitle.trim(),
       description: editDescription.trim(),
@@ -340,9 +378,7 @@ function ProductsContent() {
         ...v,
         stock: Number(v.stock) || 0,
       })),
-      images: editImageUrl
-        ? [{ url: editImageUrl.trim(), altText: editTitle.trim(), isPrimary: true }]
-        : [],
+      images: finalImages,
     };
 
     try {
@@ -413,7 +449,7 @@ function ProductsContent() {
             <button
               key={g}
               onClick={() => setSelectedGender(g)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${
                 selectedGender === g
                   ? "bg-amber-500/20 border-amber-500/40 text-amber-400"
                   : "bg-white/5 border-white/5 text-slate-400 hover:text-white"
@@ -446,92 +482,105 @@ function ProductsContent() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 text-slate-300">
-                {filteredProducts.map((p) => (
-                  <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="py-3 px-3">
-                      <div className="flex items-center gap-3">
-                        <div
-                          onClick={() => setViewingProduct(p)}
-                          className="w-10 h-10 rounded-xl bg-zinc-800 border border-white/10 flex items-center justify-center font-bold text-amber-400 text-xs shrink-0 overflow-hidden cursor-pointer hover:border-amber-400 transition-colors"
-                        >
-                          {p.images && p.images[0]?.url ? (
-                            <img
-                              src={p.images[0].url}
-                              alt={p.title}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            p.title.charAt(0)
-                          )}
-                        </div>
-                        <div>
+                {filteredProducts.map((p) => {
+                  const primaryImg = p.images?.find((img) => img.isPrimary) || p.images?.[0];
+                  return (
+                    <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="py-3 px-3">
+                        <div className="flex items-center gap-3">
                           <div
-                            onClick={() => setViewingProduct(p)}
-                            className="font-semibold text-white hover:text-amber-400 transition-colors cursor-pointer"
+                            onClick={() => openViewModal(p)}
+                            className="w-10 h-10 rounded-xl bg-zinc-800 border border-white/10 flex items-center justify-center font-bold text-amber-400 text-xs shrink-0 overflow-hidden cursor-pointer hover:border-amber-400 transition-colors relative group"
                           >
-                            {p.title}
+                            {primaryImg?.url ? (
+                              <img
+                                src={primaryImg.url}
+                                alt={p.title}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              p.title.charAt(0)
+                            )}
+                            {p.images && p.images.length > 1 && (
+                              <span className="absolute bottom-0 right-0 bg-black/80 text-[8px] font-bold text-amber-400 px-1 rounded-tl">
+                                +{p.images.length}
+                              </span>
+                            )}
                           </div>
-                          <div className="text-[10px] text-slate-500 font-mono">{p.slug}</div>
+                          <div>
+                            <div
+                              onClick={() => openViewModal(p)}
+                              className="font-semibold text-white hover:text-amber-400 transition-colors cursor-pointer flex items-center gap-1.5"
+                            >
+                              <span>{p.title}</span>
+                              {p.images && p.images.length > 1 && (
+                                <span className="text-[10px] text-slate-500 font-normal">
+                                  ({p.images.length} imgs)
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-mono">{p.slug}</div>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="py-3 px-3 text-slate-400 font-medium">
-                      {p.category?.name || "Apparel"}
-                    </td>
-                    <td className="py-3 px-3 font-bold text-white">
-                      {formatCurrency(p.basePrice)}
-                      {p.discountPrice && (
-                        <span className="block text-[10px] text-emerald-400 font-normal">
-                          Sale: {formatCurrency(p.discountPrice)}
+                      </td>
+                      <td className="py-3 px-3 text-slate-400 font-medium">
+                        {p.category?.name || "Apparel"}
+                      </td>
+                      <td className="py-3 px-3 font-bold text-white">
+                        {formatCurrency(p.basePrice)}
+                        {p.discountPrice && (
+                          <span className="block text-[10px] text-emerald-400 font-normal">
+                            Sale: {formatCurrency(p.discountPrice)}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-3">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-white/5 border border-white/10 text-slate-300">
+                          {p.gender} • {p.season}
                         </span>
-                      )}
-                    </td>
-                    <td className="py-3 px-3">
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-white/5 border border-white/10 text-slate-300">
-                        {p.gender} • {p.season}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3">
-                      <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                        {p.variants?.length || p._count?.variants || "Multiple"} SKUs
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        {/* View Product Details */}
-                        <button
-                          type="button"
-                          onClick={() => setViewingProduct(p)}
-                          title="View Product Details"
-                          className="p-1.5 rounded-lg bg-white/5 hover:bg-amber-500/20 text-slate-400 hover:text-amber-400 border border-white/5 hover:border-amber-500/30 transition-all cursor-pointer"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </button>
+                      </td>
+                      <td className="py-3 px-3">
+                        <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                          {p.variants?.length || p._count?.variants || "Multiple"} SKUs
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {/* View Product Details */}
+                          <button
+                            type="button"
+                            onClick={() => openViewModal(p)}
+                            title="View Product Details"
+                            className="p-1.5 rounded-lg bg-white/5 hover:bg-amber-500/20 text-slate-400 hover:text-amber-400 border border-white/5 hover:border-amber-500/30 transition-all cursor-pointer"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
 
-                        {/* Edit Product */}
-                        <button
-                          type="button"
-                          onClick={() => openEditModal(p)}
-                          title="Edit Product"
-                          className="p-1.5 rounded-lg bg-white/5 hover:bg-sky-500/20 text-slate-400 hover:text-sky-400 border border-white/5 hover:border-sky-500/30 transition-all cursor-pointer"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
+                          {/* Edit Product */}
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(p)}
+                            title="Edit Product"
+                            className="p-1.5 rounded-lg bg-white/5 hover:bg-sky-500/20 text-slate-400 hover:text-sky-400 border border-white/5 hover:border-sky-500/30 transition-all cursor-pointer"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
 
-                        {/* Delete Product */}
-                        <button
-                          type="button"
-                          onClick={() => setDeletingProduct(p)}
-                          title="Delete Product"
-                          className="p-1.5 rounded-lg bg-white/5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-white/5 hover:border-rose-500/30 transition-all cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          {/* Delete Product */}
+                          <button
+                            type="button"
+                            onClick={() => setDeletingProduct(p)}
+                            title="Delete Product"
+                            className="p-1.5 rounded-lg bg-white/5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-white/5 hover:border-rose-500/30 transition-all cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -546,7 +595,7 @@ function ProductsContent() {
       {/* ── View Product Modal ─────────────────────────────────── */}
       {viewingProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in">
-          <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 sm:p-8 max-w-3xl w-full space-y-6 my-8 max-h-[90vh] overflow-y-auto shadow-2xl">
+          <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 sm:p-8 max-w-4xl w-full space-y-6 my-8 max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
@@ -564,22 +613,56 @@ function ProductsContent() {
               <button
                 type="button"
                 onClick={() => setViewingProduct(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Product Imagery */}
+              {/* Product Imagery & Multi-Image Gallery Carousel */}
               <div className="space-y-3">
-                <div className="aspect-[3/4] rounded-xl bg-zinc-950 border border-white/10 overflow-hidden flex items-center justify-center">
-                  {viewingProduct.images && viewingProduct.images[0]?.url ? (
-                    <img
-                      src={viewingProduct.images[0].url}
-                      alt={viewingProduct.title}
-                      className="w-full h-full object-cover"
-                    />
+                <div className="aspect-[3/4] rounded-xl bg-zinc-950 border border-white/10 overflow-hidden flex items-center justify-center relative group">
+                  {viewingProduct.images && viewingProduct.images.length > 0 && viewingProduct.images[viewingImageIndex]?.url ? (
+                    <>
+                      <img
+                        src={viewingProduct.images[viewingImageIndex].url}
+                        alt={viewingProduct.title}
+                        className="w-full h-full object-cover transition-all"
+                      />
+
+                      {/* Navigation arrows for images */}
+                      {viewingProduct.images.length > 1 && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setViewingImageIndex((prev) =>
+                                prev === 0 ? (viewingProduct.images?.length || 1) - 1 : prev - 1
+                              )
+                            }
+                            className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/60 text-white hover:bg-amber-500 hover:text-black transition-colors"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setViewingImageIndex((prev) =>
+                                prev === (viewingProduct.images?.length || 1) - 1 ? 0 : prev + 1
+                              )
+                            }
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/60 text-white hover:bg-amber-500 hover:text-black transition-colors"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+
+                          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-black/70 text-[10px] text-white font-mono">
+                            {viewingImageIndex + 1} / {viewingProduct.images.length}
+                          </div>
+                        </>
+                      )}
+                    </>
                   ) : (
                     <div className="text-center p-4 text-slate-600">
                       <ImageIcon className="w-8 h-8 mx-auto mb-2" />
@@ -587,6 +670,26 @@ function ProductsContent() {
                     </div>
                   )}
                 </div>
+
+                {/* Thumbnails strip */}
+                {viewingProduct.images && viewingProduct.images.length > 1 && (
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                    {viewingProduct.images.map((img, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setViewingImageIndex(idx)}
+                        className={`w-12 h-14 rounded-lg border overflow-hidden shrink-0 transition-all cursor-pointer ${
+                          viewingImageIndex === idx
+                            ? "border-amber-400 ring-2 ring-amber-400/40"
+                            : "border-white/10 opacity-60 hover:opacity-100"
+                        }`}
+                      >
+                        <img src={img.url} alt="" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
 
                 <div className="flex items-center justify-center gap-2">
                   <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 text-slate-300">
@@ -745,7 +848,7 @@ function ProductsContent() {
               <button
                 type="button"
                 onClick={() => setEditingProduct(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -903,11 +1006,11 @@ function ProductsContent() {
                 </div>
               </div>
 
-              {/* MinIO Image Uploader */}
-              <ImageUploader
-                value={editImageUrl}
-                onChange={(url) => setEditImageUrl(url)}
-                label="Product Imagery (MinIO S3 Cloud)"
+              {/* Multi-Image MinIO Uploader */}
+              <MultiImageUploader
+                images={editImages}
+                onChange={(imgs) => setEditImages(imgs)}
+                label="Product Imagery & Gallery (Multiple MinIO Uploads)"
                 folder="products"
               />
 
@@ -1115,7 +1218,7 @@ function ProductsContent() {
               <button
                 type="button"
                 onClick={() => setIsCreateModalOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1273,11 +1376,11 @@ function ProductsContent() {
                 </div>
               </div>
 
-              {/* MinIO Image Uploader */}
-              <ImageUploader
-                value={imageUrl}
-                onChange={(url) => setImageUrl(url)}
-                label="Product Imagery (MinIO S3 Cloud)"
+              {/* Multi-Image MinIO Uploader */}
+              <MultiImageUploader
+                images={images}
+                onChange={(imgs) => setImages(imgs)}
+                label="Product Imagery & Gallery (Multiple MinIO Uploads)"
                 folder="products"
               />
 

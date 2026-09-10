@@ -5,14 +5,43 @@ import { baseApi, type ApiResponse } from "./baseApi";
 // ---------------------------------------------------------------------------
 
 export interface DashboardMetrics {
-  totalRevenue: number;
-  totalOrders: number;
-  totalCustomers: number;
-  averageOrderValue: number;
-  conversionRate: number;
-  revenueGrowthPercentage: number;
-  orderGrowthPercentage: number;
+  kpis?: {
+    totalRevenue: number;
+    totalOrders: number;
+    totalCustomers: number;
+    averageOrderValue: number;
+    conversionRate: number;
+    currency?: string;
+  };
+  totalRevenue?: number;
+  totalOrders?: number;
+  totalCustomers?: number;
+  averageOrderValue?: number;
+  conversionRate?: number;
+  revenueGrowthPercentage?: number;
+  orderGrowthPercentage?: number;
+  dailySalesChart?: Array<{
+    date: string;
+    revenue: number;
+    orderCount: number;
+    paidOrdersCount: number;
+  }>;
   dailySales?: Array<{ date: string; revenue: number; orders: number }>;
+  ordersByStatus?: Record<string, number>;
+  returnsSummary?: {
+    totalReturns: number;
+    byStatus: Record<string, number>;
+  };
+  inventoryAlertsCount?: number;
+  topSellingProducts?: Array<{
+    productId?: string;
+    productTitle: string;
+    category?: string;
+    totalUnitsSold: number;
+    totalRevenue: number;
+    inStock?: number;
+    imageUrl?: string | null;
+  }>;
 }
 
 export interface InventoryAlertItem {
@@ -100,8 +129,31 @@ export interface CategoryItem {
   sortOrder: number;
   isActive: boolean;
   parentId?: string | null;
+  parent?: { id: string; name: string; slug: string } | null;
   children?: CategoryItem[];
   _count?: { products: number; children: number };
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CategoryAdminResponse {
+  categories: CategoryItem[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface CreateCategoryInput {
+  name: string;
+  slug?: string;
+  description?: string;
+  imageUrl?: string;
+  parentId?: string | null;
+  isActive?: boolean;
+  sortOrder?: number;
 }
 
 export interface OrderItem {
@@ -378,12 +430,23 @@ export const dashboardApi = baseApi.injectEndpoints({
       providesTags: ["Category"],
     }),
 
+    getAdminCategories: builder.query<
+      ApiResponse<CategoryAdminResponse | CategoryItem[]>,
+      { page?: number; limit?: number; search?: string; parentId?: string; isActive?: boolean } | void
+    >({
+      query: (params) => ({
+        url: "/categories/admin/all",
+        params: params ?? undefined,
+      }),
+      providesTags: ["Category"],
+    }),
+
     getCategoryTree: builder.query<ApiResponse<CategoryItem[]>, void>({
       query: () => "/categories/tree",
       providesTags: ["Category"],
     }),
 
-    createCategory: builder.mutation<ApiResponse<CategoryItem>, Partial<CategoryItem>>({
+    createCategory: builder.mutation<ApiResponse<CategoryItem>, CreateCategoryInput>({
       query: (body) => ({
         url: "/categories",
         method: "POST",
@@ -392,7 +455,7 @@ export const dashboardApi = baseApi.injectEndpoints({
       invalidatesTags: ["Category"],
     }),
 
-    updateCategory: builder.mutation<ApiResponse<CategoryItem>, { id: string; data: Partial<CategoryItem> }>({
+    updateCategory: builder.mutation<ApiResponse<CategoryItem>, { id: string; data: Partial<CreateCategoryInput> }>({
       query: ({ id, data }) => ({
         url: `/categories/${id}`,
         method: "PATCH",
@@ -675,6 +738,7 @@ export const {
   useToggleFeaturedProductMutation,
   useDeleteProductMutation,
   useGetCategoriesQuery,
+  useGetAdminCategoriesQuery,
   useGetCategoryTreeQuery,
   useCreateCategoryMutation,
   useUpdateCategoryMutation,
