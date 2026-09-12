@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
@@ -165,13 +166,15 @@ export default function DashboardLayout({
 
     return (
       <div
-        className={`${sizeClasses} rounded-full overflow-hidden flex items-center justify-center shrink-0 bg-gradient-to-tr from-amber-500 to-yellow-300 text-black font-bold shadow-md`}
+        className={`${sizeClasses} rounded-full overflow-hidden flex items-center justify-center shrink-0 bg-gradient-to-tr from-amber-500 to-yellow-300 text-black font-bold shadow-md relative`}
       >
         {user?.avatarUrl ? (
-          <img
+          <Image
             src={user.avatarUrl}
             alt={user.name || "User Avatar"}
-            className="w-full h-full object-cover"
+            fill
+            unoptimized
+            className="object-cover"
           />
         ) : (
           <span>{initial}</span>

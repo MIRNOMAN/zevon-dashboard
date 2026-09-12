@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useUploadImageMutation } from "@/redux/api/dashboardApi";
 import { getErrorMessage } from "@/lib/utils";
+import Image from "next/image";
 
 export interface GalleryImage {
   id?: string;
@@ -279,10 +280,12 @@ export default function MultiImageUploader({
               >
                 {/* Image Preview */}
                 <div className="aspect-[3/4] w-full overflow-hidden bg-zinc-900 relative">
-                  <img
+                  <Image
                     src={img.url}
                     alt={img.altText || `Product View ${idx + 1}`}
-                    className="w-full h-full object-cover"
+                    fill
+                    unoptimized
+                    className="object-cover"
                   />
 
                   {/* Primary Cover Badge */}

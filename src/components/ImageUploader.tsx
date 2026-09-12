@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useUploadImageMutation } from "@/redux/api/dashboardApi";
 import { getErrorMessage } from "@/lib/utils";
+import Image from "next/image";
 
 interface ImageUploaderProps {
   value: string;
@@ -106,10 +107,12 @@ export default function ImageUploader({
       ) : value ? (
         <div className="relative rounded-2xl border border-white/10 bg-zinc-950/90 p-4 flex items-center gap-4 group">
           <div className="w-20 h-20 rounded-xl bg-zinc-900 border border-white/10 overflow-hidden shrink-0 relative">
-            <img
+            <Image
               src={value}
               alt="Uploaded Preview"
-              className="w-full h-full object-cover"
+              fill
+              unoptimized
+              className="object-cover"
             />
           </div>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useRef } from "react";
+import Image from "next/image";
 import {
   Sparkles,
   Plus,
@@ -529,10 +530,12 @@ export default function LookbooksPage() {
                 {/* Image Container with Hotspot Pins */}
                 <div className="relative aspect-[4/3] bg-zinc-950 overflow-hidden">
                   {cover ? (
-                    <img
+                    <Image
                       src={cover}
                       alt={lb.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      fill
+                      unoptimized
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-slate-600">
@@ -769,10 +772,12 @@ export default function LookbooksPage() {
                     className="relative w-full max-h-96 aspect-[16/9] sm:aspect-[4/3] rounded-xl overflow-hidden bg-zinc-900 border border-white/15 cursor-crosshair group/canvas"
                     title="Click anywhere to drop a shoppable product pin"
                   >
-                    <img
+                    <Image
                       src={coverImageUrl}
                       alt="Hotspot studio canvas"
-                      className="w-full h-full object-cover select-none pointer-events-none"
+                      fill
+                      unoptimized
+                      className="object-cover select-none pointer-events-none"
                     />
 
                     {/* Rendered Pins */}

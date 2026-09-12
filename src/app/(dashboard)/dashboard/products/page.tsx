@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from "react";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import {
   Package,
@@ -492,10 +493,12 @@ function ProductsContent() {
                             className="w-10 h-10 rounded-xl bg-zinc-800 border border-white/10 flex items-center justify-center font-bold text-amber-400 text-xs shrink-0 overflow-hidden cursor-pointer hover:border-amber-400 transition-colors relative group"
                           >
                             {primaryImg?.url ? (
-                              <img
+                              <Image
                                 src={primaryImg.url}
                                 alt={p.title}
-                                className="w-full h-full object-cover"
+                                fill
+                                unoptimized
+                                className="object-cover"
                               />
                             ) : (
                               p.title.charAt(0)
@@ -624,10 +627,12 @@ function ProductsContent() {
                 <div className="aspect-[3/4] rounded-xl bg-zinc-950 border border-white/10 overflow-hidden flex items-center justify-center relative group">
                   {viewingProduct.images && viewingProduct.images.length > 0 && viewingProduct.images[viewingImageIndex]?.url ? (
                     <>
-                      <img
+                      <Image
                         src={viewingProduct.images[viewingImageIndex].url}
                         alt={viewingProduct.title}
-                        className="w-full h-full object-cover transition-all"
+                        fill
+                        unoptimized
+                        className="object-cover transition-all"
                       />
 
                       {/* Navigation arrows for images */}
@@ -678,13 +683,13 @@ function ProductsContent() {
                         key={idx}
                         type="button"
                         onClick={() => setViewingImageIndex(idx)}
-                        className={`w-12 h-14 rounded-lg border overflow-hidden shrink-0 transition-all cursor-pointer ${
+                        className={`w-12 h-14 rounded-lg border overflow-hidden shrink-0 transition-all cursor-pointer relative ${
                           viewingImageIndex === idx
                             ? "border-amber-400 ring-2 ring-amber-400/40"
                             : "border-white/10 opacity-60 hover:opacity-100"
                         }`}
                       >
-                        <img src={img.url} alt="" className="w-full h-full object-cover" />
+                        <Image src={img.url} alt="" fill unoptimized className="object-cover" />
                       </button>
                     ))}
                   </div>
@@ -1147,12 +1152,14 @@ function ProductsContent() {
 
             {/* Product Summary Preview */}
             <div className="flex items-center gap-3 p-3 rounded-xl bg-zinc-950 border border-white/10">
-              <div className="w-12 h-12 rounded-lg bg-zinc-800 border border-white/10 flex items-center justify-center font-bold text-amber-400 text-xs shrink-0 overflow-hidden">
+              <div className="w-12 h-12 rounded-lg bg-zinc-800 border border-white/10 flex items-center justify-center font-bold text-amber-400 text-xs shrink-0 overflow-hidden relative">
                 {deletingProduct.images && deletingProduct.images[0]?.url ? (
-                  <img
+                  <Image
                     src={deletingProduct.images[0].url}
                     alt={deletingProduct.title}
-                    className="w-full h-full object-cover"
+                    fill
+                    unoptimized
+                    className="object-cover"
                   />
                 ) : (
                   deletingProduct.title.charAt(0)

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import {
   Star,
   Trash2,
@@ -129,12 +130,14 @@ export default function ReviewsPage() {
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-zinc-800 border border-white/10 overflow-hidden flex items-center justify-center text-amber-400 font-bold text-xs shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-zinc-800 border border-white/10 overflow-hidden flex items-center justify-center text-amber-400 font-bold text-xs shrink-0 relative">
                         {r.user?.avatarUrl ? (
-                          <img
+                          <Image
                             src={r.user.avatarUrl}
                             alt={r.user.name || "Customer"}
-                            className="w-full h-full object-cover"
+                            fill
+                            unoptimized
+                            className="object-cover"
                           />
                         ) : (
                           (r.user?.name || "C").charAt(0)
@@ -168,12 +171,14 @@ export default function ReviewsPage() {
 
                   {r.product && (
                     <div className="p-2.5 rounded-xl bg-zinc-900/80 border border-white/5 flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-zinc-800 border border-white/10 overflow-hidden shrink-0">
+                      <div className="w-8 h-8 rounded-lg bg-zinc-800 border border-white/10 overflow-hidden shrink-0 relative">
                         {r.product.images && r.product.images[0]?.url ? (
-                          <img
+                          <Image
                             src={r.product.images[0].url}
                             alt={r.product.title}
-                            className="w-full h-full object-cover"
+                            fill
+                            unoptimized
+                            className="object-cover"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-slate-600 text-[10px]">
@@ -205,12 +210,14 @@ export default function ReviewsPage() {
                           href={imgUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="w-12 h-12 rounded-lg border border-white/10 overflow-hidden hover:border-amber-400 transition-colors shrink-0"
+                          className="w-12 h-12 rounded-lg border border-white/10 overflow-hidden hover:border-amber-400 transition-colors shrink-0 relative"
                         >
-                          <img
+                          <Image
                             src={imgUrl}
                             alt={`Customer review media ${i + 1}`}
-                            className="w-full h-full object-cover"
+                            fill
+                            unoptimized
+                            className="object-cover"
                           />
                         </a>
                       ))}

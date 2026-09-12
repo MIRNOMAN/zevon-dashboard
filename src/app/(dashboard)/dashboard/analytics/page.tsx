@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import {
   BarChart3,
   TrendingUp,
@@ -273,9 +274,9 @@ export default function AnalyticsPage() {
                         </td>
                         <td className="py-3.5 px-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-lg bg-zinc-800 border border-white/10 overflow-hidden shrink-0 flex items-center justify-center font-bold text-amber-400 text-xs">
+                            <div className="w-9 h-9 rounded-lg bg-zinc-800 border border-white/10 overflow-hidden shrink-0 flex items-center justify-center font-bold text-amber-400 text-xs relative">
                               {p.imageUrl ? (
-                                <img src={p.imageUrl} alt={p.productTitle} className="w-full h-full object-cover" />
+                                <Image src={p.imageUrl} alt={p.productTitle} fill unoptimized className="object-cover" />
                               ) : (
                                 p.productTitle.charAt(0)
                               )}

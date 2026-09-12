@@ -23,6 +23,7 @@ import {
 } from "@/redux/api/dashboardApi";
 import ImageUploader from "@/components/ImageUploader";
 import { getErrorMessage } from "@/lib/utils";
+import Image from "next/image";
 
 export default function BannersPage() {
   const { data: adminRes, isLoading: isAdminLoading } = useGetAdminBannersQuery();
@@ -192,10 +193,12 @@ export default function BannersPage() {
             >
               <div className="h-48 rounded-xl overflow-hidden bg-zinc-950 border border-white/10 relative group">
                 {b.imageUrl ? (
-                  <img
+                  <Image
                     src={b.imageUrl}
                     alt={b.title}
-                    className="w-full h-full object-cover"
+                    fill
+                    unoptimized
+                    className="object-cover"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-slate-500 text-xs">

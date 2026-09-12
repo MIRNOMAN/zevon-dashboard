@@ -1,15 +1,38 @@
 import { baseApi, type ApiResponse } from "./baseApi";
-import type { FlashSaleItem, CreateFlashSaleInput } from "@/types/flashSales";
+import type {
+  FlashSaleItem,
+  CreateFlashSaleInput,
+  UpdateFlashSaleInput,
+  FlashSaleQueryParams,
+} from "@/types/flashSales";
+
+export interface FlashSalesResponseData {
+  campaigns: FlashSaleItem[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
 
 export const flashSalesApi = baseApi.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
     getFlashSales: builder.query<
-      ApiResponse<{ flashSales: FlashSaleItem[]; total: number } | FlashSaleItem[]>,
-      void
+      ApiResponse<FlashSalesResponseData | FlashSaleItem[]>,
+      FlashSaleQueryParams | void
     >({
-      query: () => "/flash-sales/admin/all",
+      query: (params) => ({
+        url: "/flash-sales/admin/all",
+        params: params ? { ...params } : undefined,
+      }),
       providesTags: ["Product"],
+    }),
+
+    getFlashSaleById: builder.query<ApiResponse<FlashSaleItem>, string>({
+      query: (id) => `/flash-sales/${id}`,
+      providesTags: (_res, _err, id) => [{ type: "Product", id }],
     }),
 
     createFlashSale: builder.mutation<ApiResponse<FlashSaleItem>, CreateFlashSaleInput>({
@@ -17,6 +40,18 @@ export const flashSalesApi = baseApi.injectEndpoints({
         url: "/flash-sales",
         method: "POST",
         body,
+      }),
+      invalidatesTags: ["Product"],
+    }),
+
+    updateFlashSale: builder.mutation<
+      ApiResponse<FlashSaleItem>,
+      { id: string; data: UpdateFlashSaleInput }
+    >({
+      query: ({ id, data }) => ({
+        url: `/flash-sales/${id}`,
+        method: "PATCH",
+        body: data,
       }),
       invalidatesTags: ["Product"],
     }),
@@ -41,7 +76,10 @@ export const flashSalesApi = baseApi.injectEndpoints({
 
 export const {
   useGetFlashSalesQuery,
+  useGetFlashSaleByIdQuery,
   useCreateFlashSaleMutation,
+  useUpdateFlashSaleMutation,
   useToggleFlashSaleStatusMutation,
   useDeleteFlashSaleMutation,
 } = flashSalesApi;
+

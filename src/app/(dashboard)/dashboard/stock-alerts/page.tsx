@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -537,9 +538,9 @@ function AlertItemCard({
     <div className="p-3.5 rounded-xl bg-zinc-950/80 border border-white/5 hover:border-amber-500/30 transition-all space-y-2.5 group">
       <div className="flex items-start gap-3">
         {/* Thumbnail preview */}
-        <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-white/10 overflow-hidden flex items-center justify-center shrink-0">
+        <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-white/10 overflow-hidden flex items-center justify-center shrink-0 relative">
           {item.imageUrl ? (
-            <img src={item.imageUrl} alt={item.product?.title} className="w-full h-full object-cover" />
+            <Image src={item.imageUrl} alt={item.product?.title || "Product"} fill unoptimized className="object-cover" />
           ) : (
             <Package className="w-5 h-5 text-slate-500" />
           )}

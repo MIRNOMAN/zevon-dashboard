@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import Image from "next/image";
 import {
   FolderTree,
   Plus,
@@ -514,12 +515,14 @@ export default function CategoriesPage() {
               {/* Root Row */}
               <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-zinc-900/80 border-b border-white/5">
                 <div className="flex items-center gap-3.5">
-                  <div className="w-11 h-11 rounded-xl bg-zinc-950 border border-white/10 overflow-hidden flex items-center justify-center shrink-0">
+                  <div className="w-11 h-11 rounded-xl bg-zinc-950 border border-white/10 overflow-hidden flex items-center justify-center shrink-0 relative">
                     {root.imageUrl ? (
-                      <img
+                      <Image
                         src={root.imageUrl}
                         alt={root.name}
-                        className="w-full h-full object-cover"
+                        fill
+                        unoptimized
+                        className="object-cover"
                       />
                     ) : (
                       <FolderOpen className="w-5 h-5 text-amber-400" />
@@ -589,12 +592,14 @@ export default function CategoriesPage() {
                       className="py-2.5 px-3 rounded-xl hover:bg-white/[0.02] flex items-center justify-between gap-3 transition-colors"
                     >
                       <div className="flex items-center gap-3 pl-4 border-l-2 border-amber-500/40">
-                        <div className="w-8 h-8 rounded-lg bg-zinc-950 border border-white/10 overflow-hidden flex items-center justify-center shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-zinc-950 border border-white/10 overflow-hidden flex items-center justify-center shrink-0 relative">
                           {sub.imageUrl ? (
-                            <img
+                            <Image
                               src={sub.imageUrl}
                               alt={sub.name}
-                              className="w-full h-full object-cover"
+                              fill
+                              unoptimized
+                              className="object-cover"
                             />
                           ) : (
                             <Layers className="w-4 h-4 text-slate-400" />
@@ -674,12 +679,14 @@ export default function CategoriesPage() {
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-zinc-950 border border-white/10 overflow-hidden flex items-center justify-center shrink-0 shadow-inner group-hover:scale-105 transition-transform">
+                      <div className="w-12 h-12 rounded-xl bg-zinc-950 border border-white/10 overflow-hidden flex items-center justify-center shrink-0 shadow-inner group-hover:scale-105 transition-transform relative">
                         {cat.imageUrl ? (
-                          <img
+                          <Image
                             src={cat.imageUrl}
                             alt={cat.name}
-                            className="w-full h-full object-cover"
+                            fill
+                            unoptimized
+                            className="object-cover"
                           />
                         ) : (
                           <Folder className={`w-6 h-6 ${isRoot ? "text-amber-400" : "text-slate-400"}`} />
