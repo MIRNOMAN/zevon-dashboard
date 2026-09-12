@@ -31,11 +31,13 @@ import {
   type CreateFlashSaleItemInput,
   type ProductItem,
 } from "@/redux/api/dashboardApi";
-import ImageUploader from "@/components/ImageUploader";
 import { getErrorMessage } from "@/lib/utils";
+import { useFormatPrice } from "@/lib/useFormatPrice";
+import ImageUploader from "@/components/ImageUploader";
 import Image from "next/image";
 
 export default function FlashSalesPage() {
+  const { format: formatCurrency, symbol } = useFormatPrice();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     "ALL" | "LIVE" | "UPCOMING" | "ENDED" | "INACTIVE"
@@ -774,14 +776,14 @@ export default function FlashSalesPage() {
                                     {item.product?.title || "Product"}
                                   </p>
                                   <p className="text-[11px] text-slate-400 font-mono">
-                                    Original: ৳{item.product?.basePrice ?? "—"}
+                                    Original: {item.product?.basePrice ? formatCurrency(item.product.basePrice) : "—"}
                                   </p>
                                 </div>
                               </div>
 
                               <div className="text-right font-mono">
                                 <span className="text-emerald-400 font-bold text-xs">
-                                  Deal: ৳{item.discountPrice}
+                                  Deal: {formatCurrency(item.discountPrice)}
                                 </span>
                                 <p className="text-[11px] text-slate-400">
                                   Claimed: {item.soldCount || 0} / {item.quantityLimit} units
@@ -985,7 +987,7 @@ export default function FlashSalesPage() {
                         >
                           <Plus className="w-3 h-3" />
                           <span className="line-clamp-1 max-w-[140px]">{p.title}</span>
-                          <span className="font-mono text-[10px] opacity-75">৳{p.basePrice}</span>
+                          <span className="font-mono text-[10px] opacity-75">{formatCurrency(p.basePrice)}</span>
                         </button>
                       );
                     })}
@@ -1003,13 +1005,13 @@ export default function FlashSalesPage() {
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-white truncate">{item.productTitle}</p>
                           <p className="text-[10px] text-slate-400 font-mono">
-                            Base: ৳{item.basePrice}
+                            Base: {formatCurrency(item.basePrice)}
                           </p>
                         </div>
 
                         <div className="flex items-center gap-2">
                           <div>
-                            <label className="block text-[10px] text-slate-400">Deal ৳</label>
+                            <label className="block text-[10px] text-slate-400">Deal ({symbol})</label>
                             <input
                               type="number"
                               min="1"

@@ -28,8 +28,10 @@ import {
   type CouponItem,
   type DiscountType,
 } from "@/redux/api/dashboardApi";
+import { useFormatPrice } from "@/lib/useFormatPrice";
 
 export default function CouponsPage() {
+  const { format: formatCurrency, symbol } = useFormatPrice();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
 
@@ -392,7 +394,7 @@ export default function CouponsPage() {
 
                     <div className="text-right">
                       <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs font-bold text-emerald-400 font-mono">
-                        {isPercentage ? `${valNum}% OFF` : `৳${valNum} OFF`}
+                        {isPercentage ? `${valNum}% OFF` : `${formatCurrency(valNum)} OFF`}
                       </span>
                     </div>
                   </div>
@@ -407,13 +409,13 @@ export default function CouponsPage() {
                     {minSpend ? (
                       <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-slate-300 border border-white/5 flex items-center gap-1">
                         <DollarSign className="w-3 h-3 text-amber-400" />
-                        Min: ৳{minSpend}
+                        Min: {formatCurrency(minSpend)}
                       </span>
                     ) : null}
 
                     {maxCap ? (
                       <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-slate-300 border border-white/5">
-                        Cap: ৳{maxCap}
+                        Cap: {formatCurrency(maxCap)}
                       </span>
                     ) : null}
 
@@ -588,7 +590,7 @@ export default function CouponsPage() {
                     className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-white/10 text-xs text-white focus:outline-none focus:border-amber-400"
                   >
                     <option value="PERCENTAGE">Percentage (% Off)</option>
-                    <option value="FIXED_AMOUNT">Fixed Amount (৳ Flat)</option>
+                    <option value="FIXED_AMOUNT">Fixed Amount ({symbol} Flat)</option>
                   </select>
                 </div>
                 <div>
@@ -602,7 +604,7 @@ export default function CouponsPage() {
                     required
                     value={discountValue}
                     onChange={(e) => setDiscountValue(e.target.value)}
-                    placeholder={discountType === "PERCENTAGE" ? "20 (for 20%)" : "300 (for ৳300)"}
+                    placeholder={discountType === "PERCENTAGE" ? "20 (for 20%)" : `30 (for ${symbol}30)`}
                     className="w-full px-3.5 py-2 rounded-xl bg-zinc-950 border border-white/10 text-xs text-white font-mono focus:outline-none focus:border-amber-400"
                   />
                 </div>
@@ -612,7 +614,7 @@ export default function CouponsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs text-slate-300 font-semibold mb-1">
-                    Min Cart Spend (৳)
+                    Min Cart Spend ({symbol})
                   </label>
                   <input
                     type="number"
@@ -620,13 +622,13 @@ export default function CouponsPage() {
                     min="0"
                     value={minOrderAmount}
                     onChange={(e) => setMinOrderAmount(e.target.value)}
-                    placeholder="e.g. 1500"
+                    placeholder="e.g. 150"
                     className="w-full px-3.5 py-2 rounded-xl bg-zinc-950 border border-white/10 text-xs text-white font-mono focus:outline-none focus:border-amber-400"
                   />
                 </div>
                 <div>
                   <label className="block text-xs text-slate-300 font-semibold mb-1">
-                    Max Discount Cap (৳)
+                    Max Discount Cap ({symbol})
                   </label>
                   <input
                     type="number"

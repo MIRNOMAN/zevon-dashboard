@@ -24,3 +24,4 @@ export * from "./flashSalesApi";
 export * from "./uploadApi";
 export * from "./returnsApi";
 export * from "./abandonedCartApi";
+export * from "./giftCardsApi";
