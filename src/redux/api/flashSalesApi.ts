@@ -20,10 +20,28 @@ export const flashSalesApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Product"],
     }),
+
+    toggleFlashSaleStatus: builder.mutation<ApiResponse<FlashSaleItem>, string>({
+      query: (id) => ({
+        url: `/flash-sales/${id}/toggle-status`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["Product"],
+    }),
+
+    deleteFlashSale: builder.mutation<ApiResponse<{ message: string }>, string>({
+      query: (id) => ({
+        url: `/flash-sales/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Product"],
+    }),
   }),
 });
 
 export const {
   useGetFlashSalesQuery,
   useCreateFlashSaleMutation,
+  useToggleFlashSaleStatusMutation,
+  useDeleteFlashSaleMutation,
 } = flashSalesApi;

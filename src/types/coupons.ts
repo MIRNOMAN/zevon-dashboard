@@ -2,18 +2,26 @@
 // Coupon & Promotion Types
 // ---------------------------------------------------------------------------
 
+export type DiscountType = "PERCENTAGE" | "FIXED_AMOUNT";
+
 export interface CouponItem {
   id: string;
   code: string;
   description?: string | null;
-  discountType: "PERCENTAGE" | "FIXED_AMOUNT";
-  discountValue: number;
-  maxDiscount?: number | null;
-  minOrderAmount?: number | null;
-  usageCount: number;
+  discountType: DiscountType;
+  discountValue: number | string;
+  minOrderAmount?: number | string | null;
+  maxDiscountAmount?: number | string | null;
+  maxDiscount?: number | null; // legacy alias
+  startDate: string;
+  endDate: string;
   usageLimit?: number | null;
+  usedCount: number;
+  usageCount?: number; // legacy alias
+  perUserLimit?: number;
   isActive: boolean;
-  expiresAt?: string | null;
+  status?: "ACTIVE" | "INACTIVE" | "EXPIRED" | "SCHEDULED" | string;
+  redeemedOrdersCount?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -21,11 +29,16 @@ export interface CouponItem {
 export interface CreateCouponInput {
   code: string;
   description?: string;
-  discountType: "PERCENTAGE" | "FIXED_AMOUNT";
+  discountType: DiscountType;
   discountValue: number;
-  maxDiscount?: number;
   minOrderAmount?: number;
+  maxDiscountAmount?: number;
+  startDate: string;
+  endDate: string;
   usageLimit?: number;
+  perUserLimit?: number;
   isActive?: boolean;
-  expiresAt?: string;
 }
+
+export interface UpdateCouponInput extends Partial<CreateCouponInput> {}
+
