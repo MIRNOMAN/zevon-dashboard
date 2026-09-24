@@ -31,7 +31,7 @@ export default function AuthLayout({
             <span>End-to-End Encrypted Session</span>
           </div>
           <a
-            href="http://localhost:5000/api/docs"
+            href={`${process.env.NEXT_PUBLIC_BACKEND_URL || "https://api.mirnoman.com"}/api/docs`}
             target="_blank"
             rel="noreferrer"
             className="flex items-center gap-1 hover:text-amber-400 transition-colors"

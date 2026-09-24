@@ -9,8 +9,8 @@ const serverEnvSchema = z.object({
     .enum(["development", "test", "production"])
     .default("development"),
   DATABASE_URL: z.string().url().optional(),
-  API_BASE_URL: z.string().url().default("http://localhost:5000/api/v1"),
-  BACKEND_URL: z.string().url().default("http://localhost:5000"),
+  API_BASE_URL: z.string().url().default("https://api.mirnoman.com/api/v1"),
+  BACKEND_URL: z.string().url().default("https://api.mirnoman.com"),
   API_SECRET_KEY: z.string().min(1).optional(),
 });
 
@@ -22,15 +22,15 @@ const clientEnvSchema = z.object({
   NEXT_PUBLIC_APP_URL: z
     .string()
     .url()
-    .default("http://localhost:3000"),
+    .default("https://admin.mirnoman.com"),
   NEXT_PUBLIC_API_BASE_URL: z
     .string()
     .url()
-    .default("http://localhost:5000/api/v1"),
+    .default("https://api.mirnoman.com/api/v1"),
   NEXT_PUBLIC_BACKEND_URL: z
     .string()
     .url()
-    .default("http://localhost:5000"),
+    .default("https://api.mirnoman.com"),
 });
 
 /**

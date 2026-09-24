@@ -15,3 +15,4 @@ export * from "./upload";
 export * from "./returns";
 export * from "./abandonedCart";
 export * from "./giftCards";
+export * from "./chat";
