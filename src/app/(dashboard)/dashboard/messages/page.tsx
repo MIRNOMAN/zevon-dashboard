@@ -28,9 +28,11 @@ import { useAppSelector } from "@/redux/hooks";
 import { selectCurrentUser, selectAccessToken } from "@/redux/features/authSlice";
 import {
   useGetChatRoomsQuery,
+  useGetChatHistoryQuery,
   useLazyGetChatHistoryQuery,
   useMarkChatAsReadMutation,
   useUploadChatAttachmentMutation,
+  useSendChatMessageMutation,
 } from "@/redux/api/chatApi";
 import type { ChatMessage, ChatRoom, AttachmentType } from "@/types/chat";
 
@@ -148,6 +150,12 @@ export default function MessagesPage() {
 
   const [markChatAsRead] = useMarkChatAsReadMutation();
   const [uploadAttachment] = useUploadChatAttachmentMutation();
+  const [sendChatMessageMutation] = useSendChatMessageMutation();
+
+  const selectedRoomRef = useRef<ChatRoom | null>(null);
+  useEffect(() => {
+    selectedRoomRef.current = selectedRoom;
+  }, [selectedRoom]);
 
   // Scroll to bottom smoothly
   const scrollToBottom = useCallback((smooth = true) => {
@@ -181,6 +189,9 @@ export default function MessagesPage() {
 
     socketInstance.on("connect", () => {
       setSocketConnected(true);
+      if (selectedRoomRef.current?.customerId) {
+        socketInstance.emit("join_room", { customerId: selectedRoomRef.current.customerId });
+      }
     });
 
     socketInstance.on("disconnect", () => {
@@ -193,17 +204,61 @@ export default function MessagesPage() {
 
     // Real-time incoming message in joined room
     socketInstance.on("new_message", (message: ChatMessage) => {
-      setMessages((prev) => {
-        // Prevent duplicates
-        if (prev.some((m) => m.id === message.id)) return prev;
-        return [...prev, message];
-      });
-      // Refetch rooms to update snippets and counts
+      const activeCustId = selectedRoomRef.current?.customerId;
+      const activeRoomId = selectedRoomRef.current?.roomId;
+
+      if (
+        !activeCustId ||
+        activeCustId === message.customerId ||
+        activeRoomId === message.roomId
+      ) {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === message.id)) return prev;
+          const tempIndex = prev.findIndex(
+            (m) =>
+              m.id.startsWith("temp_") &&
+              m.senderId === message.senderId &&
+              ((m.content && m.content === message.content) ||
+                (m.attachmentUrl && m.attachmentUrl === message.attachmentUrl))
+          );
+          if (tempIndex !== -1) {
+            const updated = [...prev];
+            updated[tempIndex] = message;
+            return updated;
+          }
+          return [...prev, message];
+        });
+      }
       refetchRooms();
     });
 
     // Global admin channel notification when any customer messages
-    socketInstance.on("admin_incoming_message", (_payload: unknown) => {
+    socketInstance.on("admin_incoming_message", (payload: any) => {
+      const activeCustId = selectedRoomRef.current?.customerId;
+      const activeRoomId = selectedRoomRef.current?.roomId;
+
+      if (
+        payload?.message &&
+        activeCustId &&
+        (activeCustId === payload.customerId || activeRoomId === payload.roomId)
+      ) {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === payload.message.id)) return prev;
+          const tempIndex = prev.findIndex(
+            (m) =>
+              m.id.startsWith("temp_") &&
+              m.senderId === payload.message.senderId &&
+              ((m.content && m.content === payload.message.content) ||
+                (m.attachmentUrl && m.attachmentUrl === payload.message.attachmentUrl))
+          );
+          if (tempIndex !== -1) {
+            const updated = [...prev];
+            updated[tempIndex] = payload.message;
+            return updated;
+          }
+          return [...prev, payload.message];
+        });
+      }
       refetchRooms();
     });
 
@@ -405,14 +460,47 @@ export default function MessagesPage() {
 
     const content = inputText.trim() || undefined;
 
-    // Emit socket message
-    if (socket) {
-      socket.emit("send_message", {
-        roomId: selectedRoom.roomId,
-        content,
-        attachmentUrl,
-        attachmentType,
-      });
+    const payload = {
+      roomId: selectedRoom.roomId,
+      content,
+      attachmentUrl,
+      attachmentType,
+    };
+
+    // Optimistic update
+    const optimisticMsg: ChatMessage = {
+      id: `temp_${Date.now()}`,
+      roomId: selectedRoom.roomId,
+      senderId: currentUser?.id || "admin",
+      customerId: selectedRoom.customerId,
+      content: content || null,
+      attachmentUrl: attachmentUrl || null,
+      attachmentType: attachmentType || null,
+      isRead: false,
+      createdAt: new Date().toISOString(),
+      sender: {
+        id: currentUser?.id || "admin",
+        name: currentUser?.name || "Support Team",
+        email: currentUser?.email || "admin@zevon.com",
+        role: "ADMIN",
+        avatarUrl: currentUser?.avatarUrl,
+      },
+    };
+
+    setMessages((prev) => [...prev, optimisticMsg]);
+    setInputText("");
+    removeSelectedFile();
+
+    // 1. Emit via socket if online, otherwise fallback to REST API
+    if (socket?.connected) {
+      socket.emit("send_message", payload);
+    } else {
+      // 2. Dispatch via REST API fallback
+      try {
+        await sendChatMessageMutation(payload).unwrap();
+      } catch (err) {
+        console.warn("REST API send message fallback error:", err);
+      }
     }
 
     // Stop typing state
@@ -422,10 +510,6 @@ export default function MessagesPage() {
         isTyping: false,
       });
     }
-
-    // Clear input & attachments
-    setInputText("");
-    removeSelectedFile();
   };
 
 

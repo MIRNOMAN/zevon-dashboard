@@ -54,6 +54,18 @@ export const chatApi = baseApi.injectEndpoints({
         body: formData,
       }),
     }),
+
+    sendChatMessage: builder.mutation<
+      ApiResponse<any>,
+      { content?: string; attachmentUrl?: string; attachmentType?: string; roomId?: string }
+    >({
+      query: (body) => ({
+        url: "/chat/message",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Chat"],
+    }),
   }),
 });
 
@@ -63,4 +75,5 @@ export const {
   useLazyGetChatHistoryQuery,
   useMarkChatAsReadMutation,
   useUploadChatAttachmentMutation,
+  useSendChatMessageMutation,
 } = chatApi;
