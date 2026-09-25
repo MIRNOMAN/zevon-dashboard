@@ -37,7 +37,7 @@ const rawBaseQuery = fetchBaseQuery({
   baseUrl:
     process.env.NEXT_PUBLIC_API_BASE_URL ??
     process.env.NEXT_PUBLIC_BACKEND_URL ??
-    "http://localhost:5000/api/v1",
+    "https://api.mirnoman.com/api/v1",
   prepareHeaders: (headers, { getState }) => {
     let token = (getState() as RootState).auth.accessToken;
 
@@ -133,6 +133,12 @@ export const baseApi = createApi({
     "Shipping",
     "GiftCard",
     "Chat",
+    "Loyalty",
+    "Referral",
+    "Sustainability",
+    "Settings",
+    "Stores",
+    "Notification",
   ],
   endpoints: () => ({}),
 });

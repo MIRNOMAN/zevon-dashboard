@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Lock,
   Mail,
@@ -16,11 +16,12 @@ import {
 } from "lucide-react";
 import { useLoginMutation } from "@/redux/api/authApi";
 import { useAppDispatch } from "@/redux/hooks";
-import { setCredentials } from "@/redux/features/authSlice";
+import { setCredentials, logout } from "@/redux/features/authSlice";
 import { getErrorMessage } from "@/lib/utils";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
   const [login, { isLoading }] = useLoginMutation();
 
@@ -32,6 +33,13 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam === "access_denied" || errorParam === "unauthorized_role") {
+      setErrorMessage("Access Denied: Only users with the ADMIN role are permitted to access the admin dashboard.");
+    }
+  }, [searchParams]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
@@ -58,17 +66,30 @@ export default function LoginPage() {
       }).unwrap();
 
       if (response && response.data) {
+        const loggedInUser = response.data.user;
+
+        // Strictly enforce ADMIN role access only
+        if (loggedInUser.role !== "ADMIN") {
+          dispatch(logout());
+          setErrorMessage(
+            "Access Denied: Only accounts with the 'ADMIN' role can log in to the Dashboard. Your account role is " +
+              (loggedInUser.role || "CUSTOMER") +
+              "."
+          );
+          return;
+        }
+
         // Explicitly ensure Redux state and localStorage have access-token & refresh-token
         dispatch(
           setCredentials({
-            user: response.data.user,
+            user: loggedInUser,
             accessToken: response.data.accessToken,
             refreshToken: response.data.refreshToken,
           }),
         );
       }
 
-      setSuccessMessage("Authenticated successfully! Redirecting to Dashboard...");
+      setSuccessMessage("Admin authenticated successfully! Redirecting to Dashboard...");
 
       setTimeout(() => {
         router.push("/dashboard");
@@ -228,3 +249,19 @@ export default function LoginPage() {
     </div>
   );
 }
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-12 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
+          <Loader2 className="w-6 h-6 animate-spin text-amber-400" />
+          <span className="text-xs">Loading admin portal...</span>
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
+  );
+}
+

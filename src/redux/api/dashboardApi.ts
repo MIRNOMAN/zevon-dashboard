@@ -26,3 +26,7 @@ export * from "./returnsApi";
 export * from "./abandonedCartApi";
 export * from "./giftCardsApi";
 export * from "./chatApi";
+export * from "./loyaltyApi";
+export * from "./sustainabilityApi";
+export * from "./settingsApi";
+export * from "./notificationsApi";

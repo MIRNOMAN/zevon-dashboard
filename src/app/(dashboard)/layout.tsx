@@ -31,17 +31,19 @@ import {
   LogOut,
   Menu,
   X,
-  Bell,
   ChevronRight,
   ShieldAlert,
   Loader2,
 } from "lucide-react";
 import CurrencySwitcher from "@/components/CurrencySwitcher";
-import { useAppSelector } from "@/redux/hooks";
+import { ZevonLogo } from "@/components/common/Logo";
+import { NotificationDropdown } from "@/components/layout/NotificationDropdown";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import {
   selectCurrentUser,
   selectIsAuthenticated,
   selectIsAuthInitialized,
+  logout as logoutAction,
 } from "@/redux/features/authSlice";
 import { useLogoutMutation, useGetMeQuery } from "@/redux/api/authApi";
 
@@ -123,7 +125,9 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const currentUser = useAppSelector(selectCurrentUser);
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
@@ -142,19 +146,26 @@ export default function DashboardLayout({
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  // Auth Guard: redirect to login if not authenticated once initialized
+  // Auth & Admin Role Guard: redirect to login if not authenticated or not ADMIN
   useEffect(() => {
-    if (isInitialized && !isAuthenticated) {
-      router.replace("/login");
+    if (isInitialized) {
+      if (!isAuthenticated) {
+        router.replace("/login");
+      } else if (user && user.role !== "ADMIN") {
+        dispatch(logoutAction());
+        router.replace("/login?error=access_denied");
+      }
     }
-  }, [isInitialized, isAuthenticated, router]);
+  }, [isInitialized, isAuthenticated, user, dispatch, router]);
 
-  const handleLogout = async () => {
+  const confirmLogout = async () => {
     try {
       await logout().unwrap();
     } catch {
       // Force logout
     } finally {
+      dispatch(logoutAction());
+      setIsLogoutModalOpen(false);
       router.push("/login");
     }
   };
@@ -215,21 +226,9 @@ export default function DashboardLayout({
     <div className="min-h-screen flex bg-slate-950 text-slate-100 antialiased selection:bg-amber-500 selection:text-black">
       {/* ── Desktop Sidebar ──────────────────────────────────────── */}
       <aside className="hidden lg:flex w-72 flex-col shrink-0 border-r border-white/10 bg-zinc-950/80 backdrop-blur-xl">
-        {/* Brand Header */}
-        <div className="flex h-18 items-center justify-between border-b border-white/10 px-6">
-          <Link href="/dashboard" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-300 flex items-center justify-center font-bold text-black text-lg shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform">
-              Z
-            </div>
-            <div>
-              <span className="text-lg font-black tracking-wider text-white">
-                ZEVON
-              </span>
-              <span className="text-[9px] block font-medium tracking-widest text-amber-400 uppercase">
-                Enterprise Dashboard
-              </span>
-            </div>
-          </Link>
+        {/* Brand Header with Frontend Logo */}
+        <div className="flex h-20 items-center justify-between border-b border-white/10 px-5">
+          <ZevonLogo className="hover:opacity-90" showSubtitle={true} />
         </div>
 
         {/* Scrollable Navigation */}
@@ -297,10 +296,9 @@ export default function DashboardLayout({
 
             <button
               type="button"
-              onClick={handleLogout}
-              disabled={isLoggingOut}
+              onClick={() => setIsLogoutModalOpen(true)}
               title="Sign Out"
-              className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+              className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -316,17 +314,12 @@ export default function DashboardLayout({
             onClick={() => setMobileMenuOpen(false)}
           />
           <div className="relative w-72 max-w-[85vw] bg-zinc-950 border-r border-white/10 flex flex-col h-full z-10 animate-in slide-in-from-left duration-200">
-            <div className="flex h-16 items-center justify-between border-b border-white/10 px-5">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center font-bold text-black text-sm">
-                  Z
-                </div>
-                <span className="font-bold text-white tracking-wide">ZEVON Admin</span>
-              </div>
+            <div className="flex h-18 items-center justify-between border-b border-white/10 px-4">
+              <ZevonLogo showSubtitle={false} />
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -382,8 +375,11 @@ export default function DashboardLayout({
 
               <button
                 type="button"
-                onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold hover:bg-rose-500/20"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setIsLogoutModalOpen(true);
+                }}
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold hover:bg-rose-500/20 cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Log Out</span>
@@ -401,7 +397,7 @@ export default function DashboardLayout({
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5"
+              className="lg:hidden p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 cursor-pointer"
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -419,22 +415,15 @@ export default function DashboardLayout({
             </div>
           </div>
 
-          <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-2.5 sm:gap-4">
             {/* Currency Switcher */}
             <CurrencySwitcher />
 
-            {/* Notifications */}
-            <button
-              type="button"
-              className="relative p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
-              title="Notifications"
-            >
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-400 ring-2 ring-zinc-950" />
-            </button>
+            {/* Dynamic Notifications Dropdown */}
+            <NotificationDropdown />
 
-            {/* User Avatar & Logout */}
-            <div className="flex items-center gap-3 pl-2 border-l border-white/10">
+            {/* User Avatar & Logout Trigger */}
+            <div className="flex items-center gap-2.5 sm:gap-3 pl-2 border-l border-white/10">
               <div className="flex items-center gap-2">
                 {renderUserAvatar("sm")}
                 <div className="hidden sm:block text-left">
@@ -449,10 +438,9 @@ export default function DashboardLayout({
 
               <button
                 type="button"
-                onClick={handleLogout}
-                disabled={isLoggingOut}
+                onClick={() => setIsLogoutModalOpen(true)}
                 title="Log Out of Dashboard"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -465,6 +453,51 @@ export default function DashboardLayout({
           {children}
         </main>
       </div>
+
+      {/* ── Logout Confirmation Permission Modal ─────────────────── */}
+      {isLogoutModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-md rounded-2xl bg-zinc-900 border border-white/10 p-6 shadow-2xl space-y-5">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 shrink-0">
+                <LogOut className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-white">Confirm Sign Out</h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Are you sure you want to exit your administrator session? You will need to log in again to access the enterprise dashboard.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-zinc-950 border border-white/5 flex items-center justify-between text-xs">
+              <span className="text-slate-400">Account:</span>
+              <span className="font-semibold text-white truncate max-w-[200px]">
+                {user?.email || "admin@zevon.com"}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsLogoutModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-semibold transition cursor-pointer"
+              >
+                Stay Logged In
+              </button>
+              <button
+                type="button"
+                onClick={confirmLogout}
+                disabled={isLoggingOut}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-rose-600/20 disabled:opacity-50 cursor-pointer"
+              >
+                {isLoggingOut && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>{isLoggingOut ? "Signing Out..." : "Yes, Log Out"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

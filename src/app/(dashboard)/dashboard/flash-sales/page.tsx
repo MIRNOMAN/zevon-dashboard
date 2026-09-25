@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Zap,
   Plus,
@@ -18,7 +18,100 @@ import {
   Percent,
   X,
   Package,
+  Calendar,
 } from "lucide-react";
+
+function CampaignCountdownTimer({
+  startTime,
+  endTime,
+  isActive,
+}: {
+  startTime: string;
+  endTime: string;
+  isActive: boolean;
+}) {
+  const [timeLeft, setTimeLeft] = useState<{
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+    status: "LIVE" | "UPCOMING" | "ENDED" | "DISABLED";
+  }>({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+    status: "LIVE",
+  });
+
+  useEffect(() => {
+    const calc = () => {
+      if (!isActive) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, status: "DISABLED" });
+        return;
+      }
+      const now = Date.now();
+      const start = new Date(startTime).getTime();
+      const end = new Date(endTime).getTime();
+
+      if (now < start) {
+        const diff = Math.max(0, start - now);
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((diff / (1000 * 60)) % 60);
+        const seconds = Math.floor((diff / 1000) % 60);
+        setTimeLeft({ days, hours, minutes, seconds, status: "UPCOMING" });
+      } else if (now > end) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, status: "ENDED" });
+      } else {
+        const diff = Math.max(0, end - now);
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((diff / (1000 * 60)) % 60);
+        const seconds = Math.floor((diff / 1000) % 60);
+        setTimeLeft({ days, hours, minutes, seconds, status: "LIVE" });
+      }
+    };
+
+    calc();
+    const interval = setInterval(calc, 1000);
+    return () => clearInterval(interval);
+  }, [startTime, endTime, isActive]);
+
+  if (timeLeft.status === "DISABLED") {
+    return (
+      <span className="text-[10px] font-mono text-slate-500 flex items-center gap-1">
+        <Clock className="w-3 h-3" /> Disabled
+      </span>
+    );
+  }
+
+  if (timeLeft.status === "ENDED") {
+    return (
+      <span className="text-[10px] font-mono text-rose-400/80 flex items-center gap-1">
+        <Clock className="w-3 h-3 text-rose-400" /> Ended
+      </span>
+    );
+  }
+
+  const p = (n: number) => n.toString().padStart(2, "0");
+
+  if (timeLeft.status === "UPCOMING") {
+    return (
+      <div className="flex items-center gap-1 text-[10px] font-mono text-sky-400 bg-sky-950/40 border border-sky-800/40 px-2 py-0.5 rounded-md">
+        <Clock className="w-3 h-3" />
+        <span>Starts in: {timeLeft.days > 0 ? `${timeLeft.days}d ` : ""}{p(timeLeft.hours)}h:{p(timeLeft.minutes)}m:{p(timeLeft.seconds)}s</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-amber-300 bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 rounded-md shadow-xs">
+      <Clock className="w-3 h-3 text-amber-400" />
+      <span>{timeLeft.days > 0 ? `${timeLeft.days}d ` : ""}{p(timeLeft.hours)}h:{p(timeLeft.minutes)}m:{p(timeLeft.seconds)}s left</span>
+    </div>
+  );
+}
 import {
   useGetFlashSalesQuery,
   useGetFlashSaleByIdQuery,
@@ -34,6 +127,7 @@ import {
 import { getErrorMessage } from "@/lib/utils";
 import { useFormatPrice } from "@/lib/useFormatPrice";
 import ImageUploader from "@/components/ImageUploader";
+import { DateTimePicker } from "@/components/common/DateTimePicker";
 import Image from "next/image";
 
 export default function FlashSalesPage() {
@@ -579,7 +673,7 @@ export default function FlashSalesPage() {
                   ) : null}
 
                   {/* Products & Dates Meta */}
-                  <div className="pt-2 border-t border-white/5 space-y-1.5 text-[11px] text-slate-400">
+                  <div className="pt-2 border-t border-white/5 space-y-2 text-[11px] text-slate-400">
                     <div className="flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
                         <Package className="w-3.5 h-3.5 text-amber-400" />
@@ -588,11 +682,22 @@ export default function FlashSalesPage() {
                       <strong className="text-white font-mono">{productCount} items</strong>
                     </div>
 
-                    <div className="flex items-center gap-1.5 font-mono text-[10px] text-slate-400">
-                      <Clock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                      <span>
-                        {new Date(sale.startTime).toLocaleDateString()} {new Date(sale.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – {new Date(sale.endTime).toLocaleDateString()} {new Date(sale.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 font-mono text-[10px] text-slate-400 truncate">
+                        <Calendar className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                        <span className="truncate">
+                          {new Date(sale.startTime).toLocaleDateString()} – {new Date(sale.endTime).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Live Dynamic Countdown on Dashboard Card */}
+                    <div className="pt-0.5">
+                      <CampaignCountdownTimer
+                        startTime={sale.startTime}
+                        endTime={sale.endTime}
+                        isActive={sale.isActive}
+                      />
                     </div>
                   </div>
                 </div>
@@ -906,31 +1011,97 @@ export default function FlashSalesPage() {
               </div>
 
               {/* Date & Time (Start & End) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-slate-300 font-semibold mb-1">
-                    Start Date & Time *
-                  </label>
-                  <input
-                    type="datetime-local"
-                    required
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-zinc-950 border border-white/10 text-xs text-white font-mono focus:outline-none focus:border-amber-400"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-slate-300 font-semibold mb-1">
-                    End Date & Time *
-                  </label>
-                  <input
-                    type="datetime-local"
-                    required
-                    value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-zinc-950 border border-white/10 text-xs text-white font-mono focus:outline-none focus:border-amber-400"
-                  />
-                </div>
+              <div className="space-y-3 p-3.5 rounded-2xl bg-zinc-950/60 border border-white/5">
+                <DateTimePicker
+                  label="Start Date & Time"
+                  required
+                  value={startTime}
+                  onChange={setStartTime}
+                  quickButtons={[
+                    {
+                      label: "Start Right Now",
+                      onClick: () => {
+                        const now = new Date();
+                        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                        setStartTime(now.toISOString().slice(0, 16));
+                      },
+                    },
+                    {
+                      label: "Tomorrow 10 AM",
+                      onClick: () => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 1);
+                        d.setHours(10, 0, 0, 0);
+                        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+                        setStartTime(d.toISOString().slice(0, 16));
+                      },
+                    },
+                  ]}
+                />
+
+                <DateTimePicker
+                  label="End Date & Time"
+                  required
+                  min={startTime}
+                  value={endTime}
+                  onChange={setEndTime}
+                  quickButtons={[
+                    {
+                      label: "+6 Hours",
+                      onClick: () => {
+                        const base = startTime ? new Date(startTime) : new Date();
+                        const target = new Date(base.getTime() + 6 * 60 * 60 * 1000);
+                        target.setMinutes(target.getMinutes() - target.getTimezoneOffset());
+                        setEndTime(target.toISOString().slice(0, 16));
+                      },
+                    },
+                    {
+                      label: "+12 Hours",
+                      onClick: () => {
+                        const base = startTime ? new Date(startTime) : new Date();
+                        const target = new Date(base.getTime() + 12 * 60 * 60 * 1000);
+                        target.setMinutes(target.getMinutes() - target.getTimezoneOffset());
+                        setEndTime(target.toISOString().slice(0, 16));
+                      },
+                    },
+                    {
+                      label: "+24 Hours (1 Day)",
+                      onClick: () => {
+                        const base = startTime ? new Date(startTime) : new Date();
+                        const target = new Date(base.getTime() + 24 * 60 * 60 * 1000);
+                        target.setMinutes(target.getMinutes() - target.getTimezoneOffset());
+                        setEndTime(target.toISOString().slice(0, 16));
+                      },
+                    },
+                    {
+                      label: "+48 Hours (2 Days)",
+                      onClick: () => {
+                        const base = startTime ? new Date(startTime) : new Date();
+                        const target = new Date(base.getTime() + 48 * 60 * 60 * 1000);
+                        target.setMinutes(target.getMinutes() - target.getTimezoneOffset());
+                        setEndTime(target.toISOString().slice(0, 16));
+                      },
+                    },
+                    {
+                      label: "+3 Days",
+                      onClick: () => {
+                        const base = startTime ? new Date(startTime) : new Date();
+                        const target = new Date(base.getTime() + 72 * 60 * 60 * 1000);
+                        target.setMinutes(target.getMinutes() - target.getTimezoneOffset());
+                        setEndTime(target.toISOString().slice(0, 16));
+                      },
+                    },
+                    {
+                      label: "+7 Days",
+                      onClick: () => {
+                        const base = startTime ? new Date(startTime) : new Date();
+                        const target = new Date(base.getTime() + 168 * 60 * 60 * 1000);
+                        target.setMinutes(target.getMinutes() - target.getTimezoneOffset());
+                        setEndTime(target.toISOString().slice(0, 16));
+                      },
+                    },
+                  ]}
+                />
               </div>
 
               {/* Description */}

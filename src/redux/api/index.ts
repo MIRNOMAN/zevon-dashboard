@@ -16,3 +16,7 @@ export * from "./flashSalesApi";
 export * from "./uploadApi";
 export * from "./returnsApi";
 export * from "./abandonedCartApi";
+export * from "./loyaltyApi";
+export * from "./sustainabilityApi";
+export * from "./settingsApi";
+export * from "./notificationsApi";

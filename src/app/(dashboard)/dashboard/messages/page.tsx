@@ -39,7 +39,7 @@ function getAssetUrl(path?: string | null): string {
   if (!path) return "";
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
   const backendUrl =
-    process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+    process.env.NEXT_PUBLIC_BACKEND_URL || "https://api.mirnoman.com";
   const cleanBase = backendUrl.replace(/\/+$/, "");
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
   return `${cleanBase}${cleanPath}`;
@@ -168,7 +168,7 @@ export default function MessagesPage() {
     if (!token) return;
 
     const backendUrl =
-      process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+      process.env.NEXT_PUBLIC_BACKEND_URL || "https://api.mirnoman.com";
     const socketUrl = `${backendUrl.replace(/\/+$/, "")}/chat`;
 
     const socketInstance: Socket = io(socketUrl, {

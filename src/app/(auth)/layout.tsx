@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { Sparkles, ShieldCheck, ArrowUpRight } from "lucide-react";
+import { ZevonLogo } from "@/components/common/Logo";
 
 export default function AuthLayout({
   children,
@@ -11,19 +12,7 @@ export default function AuthLayout({
     <div className="min-h-screen flex flex-col justify-between bg-gradient-to-br from-slate-950 via-zinc-900 to-black text-slate-100 antialiased selection:bg-amber-500 selection:text-black">
       {/* ── Top Header ────────────────────────────────────────────── */}
       <header className="w-full max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-300 flex items-center justify-center font-bold text-black text-xl shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform">
-            Z
-          </div>
-          <div>
-            <span className="text-xl font-black tracking-wider text-white">
-              ZEVON
-            </span>
-            <span className="text-[10px] block font-medium tracking-widest text-amber-400 uppercase">
-              Control Center
-            </span>
-          </div>
-        </Link>
+        <ZevonLogo showSubtitle={true} />
 
         <div className="hidden sm:flex items-center gap-4 text-xs text-slate-400">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
